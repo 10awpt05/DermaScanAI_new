@@ -80,6 +80,11 @@ class UserProfileFragment : Fragment() {
             true
         )
 
+        binding.btnMsg.setOnClickListener {
+            val intent = Intent(context, UserInboxActivity::class.java)
+            startActivity(intent)
+        }
+
         binding.scanRec.setOnClickListener {
             val intent = Intent(requireContext(), ScanRecords::class.java)
             startActivity(intent)

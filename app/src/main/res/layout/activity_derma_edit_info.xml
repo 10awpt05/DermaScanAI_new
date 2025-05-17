@@ -325,7 +325,7 @@
             android:id="@+id/textType"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Type"
+            android:text="Are you a:"
             android:textColor="@color/black"
             android:layout_marginStart="15dp"
             android:textSize="15sp"
@@ -343,12 +343,24 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textType" />
 
+        <TextView
+            android:id="@+id/uptake"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Please take a photo or upload your PRC License"
+            android:textColor="@color/black"
+            android:textSize="15sp"
+            android:layout_marginStart="15dp"
+            app:layout_constraintTop_toBottomOf="@id/typeSpinner"
+            app:layout_constraintStart_toStartOf="parent"
+            />
+
         <ImageView
             android:id="@+id/valView"
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:layout_margin="5dp"
-            app:layout_constraintTop_toBottomOf="@id/typeSpinner"
+            app:layout_constraintTop_toBottomOf="@id/uptake"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             />

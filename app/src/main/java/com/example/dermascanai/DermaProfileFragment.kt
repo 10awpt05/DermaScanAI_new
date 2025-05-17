@@ -76,6 +76,10 @@ class DermaProfileFragment : Fragment() {
             val intent = Intent(requireContext(), DermaRecords::class.java)
             startActivity(intent)
         }
+        binding.btnMsg.setOnClickListener {
+            val intent = Intent(context, ChatUserListActivity::class.java)
+            startActivity(intent)
+        }
 
         binding.appointmentBtn.setOnClickListener {
             val intent = Intent(requireContext(), BookingApprovalRecords::class.java)

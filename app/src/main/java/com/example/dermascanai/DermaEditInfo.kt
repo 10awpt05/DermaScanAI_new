@@ -62,7 +62,7 @@ class DermaEditInfo : AppCompatActivity() {
         setContentView(binding.root)
         database = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
 
-        val typeList = listOf("Select Type", "Certificate", "License", "Other")
+        val typeList = listOf("Dermatologist", "Clinic")
         val typeAdapter = ArrayAdapter(this, R.layout.spinner_item, typeList)
         typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.typeSpinner.adapter = typeAdapter
@@ -394,6 +394,7 @@ class DermaEditInfo : AppCompatActivity() {
                 REQUEST_CERTIFICATE_CAMERA -> {
                     val photo = data?.extras?.get("data") as Bitmap
                     selectedVerificationBitmap= photo
+                    binding.valView.setImageBitmap(selectedVerificationBitmap)
                     Toast.makeText(this, "Certificate Image Selected (Camera)", Toast.LENGTH_SHORT).show()
                 }
                 REQUEST_CERTIFICATE_GALLERY -> {
@@ -406,6 +407,7 @@ class DermaEditInfo : AppCompatActivity() {
                             ImageDecoder.decodeBitmap(source)
                         }
                     }
+                    binding.valView.setImageBitmap(selectedVerificationBitmap)
                     Toast.makeText(this, "Certificate Image Selected (Gallery)", Toast.LENGTH_SHORT).show()
                 }
             }

@@ -1,6 +1,8 @@
 package com.example.dermascanai
 
+
 data class UserInfo(
+    var uid: String? = null,
     val name: String? = null,
     val email: String? = null,
     val password: String = "",
@@ -17,6 +19,7 @@ data class UserInfo(
 )
 
 data class DermaInfo(
+    var uid: String? = null,
     val name: String? = null,
     val email: String? = null,
     val password: String = "",
@@ -34,5 +37,12 @@ data class DermaInfo(
     val verificationImg: String? = null,
     val rating: String? = null,
     val feedback: String? = null,
+    var specialization: String? = null
 
 )
+
+//data class User(
+//    val userId: String = "",
+//    val name: String = "",
+//    val profileImage: String = ""
+//)

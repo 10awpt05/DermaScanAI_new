@@ -150,6 +150,7 @@
             android:layout_marginTop="100dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardView">
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -172,6 +173,7 @@
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
                         android:background="@color/white"
                         android:text="Show Personal Info"
                         android:textColor="@color/purple_500"
@@ -179,25 +181,27 @@
                         app:icon="@drawable/ic_profile1"
                         app:iconPadding="8dp"
                         app:iconTint="@color/purple_500" />
-                </LinearLayout>
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnMsg"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:background="@color/white"
+                        android:text="Messages"
+                        android:textColor="@color/purple_500"
+                        app:cornerRadius="16dp"
+                        app:icon="@drawable/bg_recieve"
+                        app:iconPadding="8dp"
+                        app:iconTint="@color/purple_500" />
 
-                <LinearLayout
-                    android:id="@+id/linearLayout5"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_square_box"
-                    android:orientation="vertical"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/linearLayout3">
-
-                    <!-- Expand Button -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/bookingHis"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
                         android:background="@color/white"
                         android:text="Booking History"
                         android:textColor="@color/purple_500"
@@ -205,24 +209,14 @@
                         app:icon="@drawable/ic_booking"
                         app:iconPadding="8dp"
                         app:iconTint="@color/purple_500" />
-                </LinearLayout>
 
-                <LinearLayout
-                    android:id="@+id/linearLayout6"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_square_box"
-                    android:orientation="vertical"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/linearLayout5">
 
-                    <!-- Expand Button -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/scanRec"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
                         android:background="@color/white"
                         android:text="Scan Records"
                         android:textColor="@color/purple_500"
@@ -230,32 +224,26 @@
                         app:icon="@drawable/ic_scanrecord"
                         app:iconPadding="8dp"
                         app:iconTint="@color/purple_500" />
-                </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_square_box"
-                    android:backgroundTint="@color/red"
-                    android:orientation="vertical"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/linearLayout6">
-
-                    <!-- Expand Button -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/logout"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/white"
+                        android:layout_marginTop="25dp"
+                        android:layout_marginBottom="100dp"
+                        android:backgroundTint="@color/red"
                         android:text="Logout"
                         android:textColor="@color/white"
                         app:cornerRadius="16dp"
                         app:icon="@drawable/ic_logout2"
                         app:iconPadding="8dp"
                         app:iconTint="@color/white" />
+
+
                 </LinearLayout>
+
+
             </androidx.constraintlayout.widget.ConstraintLayout>
         </ScrollView>
 

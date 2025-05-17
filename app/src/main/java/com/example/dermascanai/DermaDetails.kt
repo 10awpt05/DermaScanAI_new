@@ -37,7 +37,6 @@ class DermaDetails : AppCompatActivity() {
         }
 
 
-
         fetchUserData(userEmail)
 
         binding.appointmentBtn.setOnClickListener {
@@ -45,9 +44,16 @@ class DermaDetails : AppCompatActivity() {
             intent.putExtra("doctorEmail", userEmail)
             startActivity(intent)
         }
-        binding.rateMe.setOnClickListener {
-            userEmail?.let { showRatingDialog(it) }
-        }
+
+//        binding.rateMe.setOnClickListener {
+//            val intent = Intent(this, MessageMe::class.java)
+//            intent.putExtra("receiverId", userId) // where userId is the clicked user's UID
+//            this.startActivity(intent)
+
+//        }
+//        binding.rateMe.setOnClickListener {
+//            userEmail?.let { showRatingDialog(it) }
+//        }
     }
 
     private fun fetchUserData(userEmail: String) {
@@ -59,6 +65,16 @@ class DermaDetails : AppCompatActivity() {
                 if (snapshot.exists()) {
                     for (childSnapshot in snapshot.children) {
                         val dermaInfo = childSnapshot.getValue(DermaInfo::class.java)
+                        val dermaUserId = childSnapshot.key  // <-- This is the UID of the derma
+
+                        if (dermaUserId != null) {
+                            binding.rateMe.setOnClickListener {
+                                val intent = Intent(this@DermaDetails, MessageMe::class.java)
+                                intent.putExtra("receiverId", dermaUserId)
+                                startActivity(intent)
+                            }
+                        }
+
                         val address = "${dermaInfo?.barangay}, ${dermaInfo?.city}, ${dermaInfo?.province}"
                         if (dermaInfo != null) {
                             binding.textView19.text = dermaInfo.name
