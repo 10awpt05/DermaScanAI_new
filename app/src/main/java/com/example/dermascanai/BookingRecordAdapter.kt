@@ -1,134 +1,143 @@
 package com.example.dermascanai
 
-import android.graphics.BitmapFactory
-import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
-import androidx.cardview.widget.CardView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.example.dermascanai.databinding.ItemBookingApprovalBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
 class BookingApprovalAdapter(
-    private val bookingList: List<BookingData>,
+    private val bookings: List<BookingData>,
     private val onApprove: (BookingData) -> Unit,
-    private val onDecline: (BookingData) -> Unit
+    private val onDecline: (BookingData) -> Unit,
+    private val onCancel: (BookingData) -> Unit // Parameter for cancellation
 ) : RecyclerView.Adapter<BookingApprovalAdapter.BookingViewHolder>() {
 
-    class BookingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val patientName: TextView = itemView.findViewById(R.id.patientNameTv)
-        val appointmentDate: TextView = itemView.findViewById(R.id.appointmentDateTv)
-        val appointmentTime: TextView = itemView.findViewById(R.id.appointmentTimeTv)
-        val patientMessage: TextView = itemView.findViewById(R.id.patientMessageTv)
-        val statusBadge: TextView = itemView.findViewById(R.id.statusBadgeTv)
-        val patientImage: ImageView = itemView.findViewById(R.id.patientImageView) // Hidden but we keep the reference
-        val approveButton: Button = itemView.findViewById(R.id.approveButton)
-        val declineButton: Button = itemView.findViewById(R.id.declineButton)
-        val declineReasonLayout: View = itemView.findViewById(R.id.declineReasonLayout)
-        val declineReasonText: TextView = itemView.findViewById(R.id.declineReasonTv)
-        val actionButtonsLayout: View = itemView.findViewById(R.id.actionButtonsLayout)
-        val bookingCard: CardView = itemView.findViewById(R.id.bookingCard)
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookingViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_booking_approval, parent, false)
-        return BookingViewHolder(view)
+        val binding = ItemBookingApprovalBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return BookingViewHolder(binding)
     }
-
-    override fun getItemCount(): Int = bookingList.size
 
     override fun onBindViewHolder(holder: BookingViewHolder, position: Int) {
-        val booking = bookingList[position]
+        val booking = bookings[position]
+        holder.bind(booking)
+    }
 
-        // Load patient information
-        loadPatientInfo(booking.patientEmail, holder)
+    override fun getItemCount(): Int = bookings.size
 
-        // Set appointment details
-        holder.appointmentDate.text = booking.date
-        holder.appointmentTime.text = booking.time
-        holder.patientMessage.text = "Message: ${booking.message}"
+    inner class BookingViewHolder(private val binding: ItemBookingApprovalBinding) :
+        RecyclerView.ViewHolder(binding.root) {
 
-        // Set status and UI based on status
-        setStatusUI(holder, booking.status)
+        fun bind(booking: BookingData) {
+            // Format the date
+            val dateFormat = SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault())
+            val date = Date(booking.timestampMillis)
 
-        // Show decline reason if available
-        if (booking.status == "declined" && booking.declineReason != null && booking.declineReason!!.isNotEmpty()) {
-            holder.declineReasonLayout.visibility = View.VISIBLE
-            holder.declineReasonText.text = booking.declineReason
-        } else {
-            holder.declineReasonLayout.visibility = View.GONE
-        }
+            // Set basic information
+            binding.patientNameTv.text = booking.patientEmail
+            binding.appointmentDateTv.text = dateFormat.format(date)
+            binding.appointmentTimeTv.text = booking.time
+            binding.notesTextView.text = booking.message
 
-        // Show action buttons only for pending appointments
-        if (booking.status == "pending") {
-            holder.actionButtonsLayout.visibility = View.VISIBLE
+            // Configure status elements and color based on status
+            configureStatusElements(booking)
 
-            holder.approveButton.setOnClickListener {
+            // Handle decline reason visibility
+            if (!booking.declineReason.isNullOrEmpty() && booking.status == "declined") {
+                binding.declineReasonLayout.visibility = View.VISIBLE
+                binding.declineReasonTv.text = booking.declineReason
+            } else {
+                binding.declineReasonLayout.visibility = View.GONE
+            }
+
+            // Handle cancellation reason visibility - NEW CODE
+            if (!booking.cancellationReason.isNullOrEmpty() && booking.status == "cancelled") {
+                binding.cancellationReasonLayout.visibility = View.VISIBLE
+                binding.cancellationReasonTv.text = booking.cancellationReason
+            } else {
+                binding.cancellationReasonLayout.visibility = View.GONE
+            }
+
+            // Set click listeners
+            binding.approveButton.setOnClickListener {
                 onApprove(booking)
             }
 
-            holder.declineButton.setOnClickListener {
+            binding.declineButton.setOnClickListener {
                 onDecline(booking)
             }
-        } else {
-            holder.actionButtonsLayout.visibility = View.GONE
+
+            binding.cancelButton.setOnClickListener {
+                onCancel(booking)
+            }
         }
-    }
 
-    private fun loadPatientInfo(patientEmail: String, holder: BookingViewHolder) {
-        val database = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
-        val userRef = database.getReference("users").child(patientEmail.replace(".", ","))
-
-        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()) {
-                    val user = snapshot.getValue(UserData::class.java)
-                    user?.let {
-                        // Set user name
-                        holder.patientName.text = it.name ?: "Unknown Patient"
-                    }
-                } else {
-                    holder.patientName.text = patientEmail
+        private fun configureStatusElements(booking: BookingData) {
+            // Set action buttons visibility based on status
+            when (booking.status) {
+                "pending" -> {
+                    binding.approveButton.visibility = View.VISIBLE
+                    binding.declineButton.visibility = View.VISIBLE
+                    binding.cancelButton.visibility = View.GONE
+                    binding.statusLayout.visibility = View.GONE
                 }
-            }
+                "confirmed" -> { // Show cancel button for confirmed appointments - NEW CODE
+                    binding.approveButton.visibility = View.GONE
+                    binding.declineButton.visibility = View.GONE
+                    binding.cancelButton.visibility = View.VISIBLE
+                    binding.statusLayout.visibility = View.VISIBLE
 
-            override fun onCancelled(error: DatabaseError) {
-                holder.patientName.text = patientEmail
-            }
-        })
-    }
+                    // Configure status bar with confirmed styling
+                    binding.statusTextView.text = "Confirmed"
+                    binding.statusLayout.setBackgroundResource(R.drawable.status_confirmed_background)
+                    binding.statusIcon.setImageResource(R.drawable.check_circle)
+                }
+                "ongoing" -> {
+                    binding.approveButton.visibility = View.GONE
+                    binding.declineButton.visibility = View.GONE
+                    binding.cancelButton.visibility = View.VISIBLE
+                    binding.statusLayout.visibility = View.VISIBLE
 
-    private fun setStatusUI(holder: BookingViewHolder, status: String) {
-        val context = holder.itemView.context
+                    // Configure status bar with ongoing styling
+                    binding.statusTextView.text = "Ongoing"
+                    binding.statusLayout.setBackgroundResource(R.drawable.status_ongoing_background)
+                    binding.statusIcon.setImageResource(R.drawable.ongoing)
+                }
+                "cancelled" -> { // Handle cancelled status - NEW CODE
+                    binding.approveButton.visibility = View.GONE
+                    binding.declineButton.visibility = View.GONE
+                    binding.cancelButton.visibility = View.GONE
+                    binding.statusLayout.visibility = View.VISIBLE
 
-        holder.statusBadge.text = status.capitalize(Locale.getDefault())
+                    // Configure status bar with cancelled styling
+                    binding.statusTextView.text = "Cancelled"
+                    binding.statusLayout.setBackgroundResource(R.drawable.status_cancelled_background)
+                    binding.statusIcon.setImageResource(R.drawable.cancelled)
+                }
+                "declined" -> {
+                    binding.approveButton.visibility = View.GONE
+                    binding.declineButton.visibility = View.GONE
+                    binding.cancelButton.visibility = View.GONE
+                    binding.statusLayout.visibility = View.VISIBLE
 
-        when (status) {
-            "pending" -> {
-                holder.statusBadge.setBackgroundResource(R.drawable.status_background)
-                holder.statusBadge.setTextColor(ContextCompat.getColor(context, R.color.orange))
-            }
-            "confirmed" -> {
-                holder.statusBadge.setBackgroundResource(R.drawable.status_background)
-                holder.statusBadge.setTextColor(ContextCompat.getColor(context, R.color.green))
-            }
-            "declined" -> {
-                holder.statusBadge.setBackgroundResource(R.drawable.status_background)
-                holder.statusBadge.setTextColor(ContextCompat.getColor(context, R.color.red))
-            }
-            "completed" -> {
-                holder.statusBadge.setBackgroundResource(R.drawable.status_background)
-                holder.statusBadge.setTextColor(ContextCompat.getColor(context, R.color.blue))
+                    // Configure status bar with declined styling
+                    binding.statusTextView.text = "Declined"
+                    binding.statusLayout.setBackgroundResource(R.drawable.status_declined_background)
+                    binding.statusIcon.setImageResource(R.drawable.close_circle)
+                }
+                else -> {
+                    binding.approveButton.visibility = View.GONE
+                    binding.declineButton.visibility = View.GONE
+                    binding.cancelButton.visibility = View.GONE
+                    binding.statusLayout.visibility = View.VISIBLE
+                    binding.statusTextView.text = booking.status.capitalize(Locale.ROOT)
+                }
             }
         }
     }

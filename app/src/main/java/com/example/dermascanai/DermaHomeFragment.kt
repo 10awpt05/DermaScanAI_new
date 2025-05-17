@@ -70,33 +70,33 @@ class DermaHomeFragment : Fragment() {
         val currentUserEmail = FirebaseAuth.getInstance().currentUser?.email
         val bookingsRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("bookings")
 
-        bookingsRef.orderByChild("doctorEmail").equalTo(currentUserEmail)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    var latestBooking: Appointment? = null
-                    var latestTime: Long = 0
-
-                    for (child in snapshot.children) {
-                        val booking = child.getValue(Appointment::class.java)
-                        if (booking != null && booking.createdAt != null && booking.createdAt > latestTime) {
-                            latestTime = booking.createdAt
-                            latestBooking = booking
-                        }
-                    }
-
-//                    binding.nameAppoint.text = booking.time
-
-                    latestBooking?.let {
-
-                    } ?: run {
-                        Log.d("Booking", "No bookings found")
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("Booking", "Error: ${error.message}")
-                }
-            })
+//        bookingsRef.orderByChild("doctorEmail").equalTo(currentUserEmail)
+//            .addListenerForSingleValueEvent(object : ValueEventListener {
+//                override fun onDataChange(snapshot: DataSnapshot) {
+//                    var latestBooking: Appointment? = null
+//                    var latestTime: Long = 0
+//
+//                    for (child in snapshot.children) {
+//                        val booking = child.getValue(Appointment::class.java)
+//                        if (booking != null && booking.createdAt != null && booking.createdAt > latestTime) {
+//                            latestTime = booking.createdAt
+//                            latestBooking = booking
+//                        }
+//                    }
+//
+////                    binding.nameAppoint.text = booking.time
+//
+//                    latestBooking?.let {
+//
+//                    } ?: run {
+//                        Log.d("Booking", "No bookings found")
+//                    }
+//                }
+//
+//                override fun onCancelled(error: DatabaseError) {
+//                    Log.e("Booking", "Error: ${error.message}")
+//                }
+//            })
 
         val headerView = navView.getHeaderView(0)
         val closeDrawerBtn = headerView.findViewById<ImageView>(R.id.closeDrawerBtn)
