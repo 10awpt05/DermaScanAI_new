@@ -12,7 +12,7 @@ class BookingApprovalAdapter(
     private val bookings: List<BookingData>,
     private val onApprove: (BookingData) -> Unit,
     private val onDecline: (BookingData) -> Unit,
-    private val onCancel: (BookingData) -> Unit // Parameter for cancellation
+    private val onCancel: (BookingData) -> Unit
 ) : RecyclerView.Adapter<BookingApprovalAdapter.BookingViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookingViewHolder {
@@ -42,13 +42,27 @@ class BookingApprovalAdapter(
             // Set basic information
             binding.patientNameTv.text = booking.patientEmail
             binding.appointmentDateTv.text = dateFormat.format(date)
-            binding.appointmentTimeTv.text = booking.time
             binding.notesTextView.text = booking.message
 
-            // Configure status elements and color based on status
+            // Set booking ID if available
+            if (booking.bookingId.isNotEmpty()) {
+                binding.bookingIdTextView.text = "#${booking.bookingId.take(8).uppercase()}"
+            }
+
+            // Display the service instead of clinic name
+            val serviceDisplayName = if (!booking.service.isNullOrEmpty()) {
+                booking.service
+            } else {
+                "General Consultation"
+            }
+            binding.serviceTextView.text = serviceDisplayName
+
+            val bookingDateFormat = SimpleDateFormat("MMM dd, yyyy 'at' h:mm a", Locale.getDefault())
+            val bookingTimestamp = if (booking.createdAt > 0) booking.createdAt else booking.timestampMillis
+            binding.bookingTimestampTv.text = "Booked on ${bookingDateFormat.format(Date(bookingTimestamp))}"
+
             configureStatusElements(booking)
 
-            // Handle decline reason visibility
             if (!booking.declineReason.isNullOrEmpty() && booking.status == "declined") {
                 binding.declineReasonLayout.visibility = View.VISIBLE
                 binding.declineReasonTv.text = booking.declineReason
@@ -56,7 +70,6 @@ class BookingApprovalAdapter(
                 binding.declineReasonLayout.visibility = View.GONE
             }
 
-            // Handle cancellation reason visibility - NEW CODE
             if (!booking.cancellationReason.isNullOrEmpty() && booking.status == "cancelled") {
                 binding.cancellationReasonLayout.visibility = View.VISIBLE
                 binding.cancellationReasonTv.text = booking.cancellationReason
@@ -64,7 +77,6 @@ class BookingApprovalAdapter(
                 binding.cancellationReasonLayout.visibility = View.GONE
             }
 
-            // Set click listeners
             binding.approveButton.setOnClickListener {
                 onApprove(booking)
             }
@@ -79,17 +91,16 @@ class BookingApprovalAdapter(
         }
 
         private fun configureStatusElements(booking: BookingData) {
-            // Set action buttons visibility based on status
             when (booking.status) {
                 "pending" -> {
+                    binding.approvalButtonsLayout.visibility = View.VISIBLE
                     binding.approveButton.visibility = View.VISIBLE
                     binding.declineButton.visibility = View.VISIBLE
                     binding.cancelButton.visibility = View.GONE
                     binding.statusLayout.visibility = View.GONE
                 }
-                "confirmed" -> { // Show cancel button for confirmed appointments - NEW CODE
-                    binding.approveButton.visibility = View.GONE
-                    binding.declineButton.visibility = View.GONE
+                "confirmed" -> {
+                    binding.approvalButtonsLayout.visibility = View.GONE
                     binding.cancelButton.visibility = View.VISIBLE
                     binding.statusLayout.visibility = View.VISIBLE
 
@@ -98,20 +109,9 @@ class BookingApprovalAdapter(
                     binding.statusLayout.setBackgroundResource(R.drawable.status_confirmed_background)
                     binding.statusIcon.setImageResource(R.drawable.check_circle)
                 }
-                "ongoing" -> {
-                    binding.approveButton.visibility = View.GONE
-                    binding.declineButton.visibility = View.GONE
-                    binding.cancelButton.visibility = View.VISIBLE
-                    binding.statusLayout.visibility = View.VISIBLE
-
-                    // Configure status bar with ongoing styling
-                    binding.statusTextView.text = "Ongoing"
-                    binding.statusLayout.setBackgroundResource(R.drawable.status_ongoing_background)
-                    binding.statusIcon.setImageResource(R.drawable.ongoing)
-                }
-                "cancelled" -> { // Handle cancelled status - NEW CODE
-                    binding.approveButton.visibility = View.GONE
-                    binding.declineButton.visibility = View.GONE
+                "cancelled" -> {
+                    // Hide all action buttons for cancelled appointments
+                    binding.approvalButtonsLayout.visibility = View.GONE
                     binding.cancelButton.visibility = View.GONE
                     binding.statusLayout.visibility = View.VISIBLE
 
@@ -121,8 +121,8 @@ class BookingApprovalAdapter(
                     binding.statusIcon.setImageResource(R.drawable.cancelled)
                 }
                 "declined" -> {
-                    binding.approveButton.visibility = View.GONE
-                    binding.declineButton.visibility = View.GONE
+                    // Hide all action buttons for declined appointments
+                    binding.approvalButtonsLayout.visibility = View.GONE
                     binding.cancelButton.visibility = View.GONE
                     binding.statusLayout.visibility = View.VISIBLE
 
@@ -132,11 +132,13 @@ class BookingApprovalAdapter(
                     binding.statusIcon.setImageResource(R.drawable.close_circle)
                 }
                 else -> {
-                    binding.approveButton.visibility = View.GONE
-                    binding.declineButton.visibility = View.GONE
+                    // Default case for unknown status
+                    binding.approvalButtonsLayout.visibility = View.GONE
                     binding.cancelButton.visibility = View.GONE
                     binding.statusLayout.visibility = View.VISIBLE
-                    binding.statusTextView.text = booking.status.capitalize(Locale.ROOT)
+                    binding.statusTextView.text = booking.status.replaceFirstChar {
+                        if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
+                    }
                 }
             }
         }

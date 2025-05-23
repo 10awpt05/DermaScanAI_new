@@ -4,6 +4,7 @@
     import android.content.Intent
     import android.graphics.Bitmap
     import android.graphics.BitmapFactory
+    import android.media.MediaPlayer
     import android.os.Bundle
     import android.util.Base64
     import android.view.View
@@ -14,6 +15,7 @@
     import androidx.appcompat.app.AppCompatActivity
     import androidx.core.view.GravityCompat
     import androidx.recyclerview.widget.LinearLayoutManager
+    import com.example.dermascanai.DermaPage
     import com.example.dermascanai.databinding.ActivityBlogBinding
     import com.example.dermascanai.databinding.DialogAddBlogBinding
     import com.example.dermascanai.databinding.LayoutNotificationPopupBinding
@@ -41,18 +43,22 @@
         private val notificationRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
             .getReference("notifications")
 
-
+        private lateinit var notificationListener: ChildEventListener
         private var currentFullName: String = ""
         private var currentImageBase64: String = ""
+        private var notificationListenerStartTime: Long = 0
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             binding = ActivityBlogBinding.inflate(layoutInflater)
             setContentView(binding.root)
 
+            notificationListenerStartTime = System.currentTimeMillis()
+
             loadCurrentUserInfo()
             setupRecyclerView()
             fetchBlogPosts()
+            listenForNotifications()
 
             val drawerLayout = binding.drawerLayout
             val navView = binding.navigationView
@@ -175,12 +181,12 @@
 
 
             // Choose Image
-            bottomSheetBinding.btnChooseImage.setOnClickListener {
-                val intent = Intent(Intent.ACTION_PICK)
-                intent.type = "image/*"
-                startActivityForResult(intent, IMAGE_PICK_CODE)
-                tempImageBinding = bottomSheetBinding
-            }
+//            bottomSheetBinding.btnChooseImage.setOnClickListener {
+//                val intent = Intent(Intent.ACTION_PICK)
+//                intent.type = "image/*"
+//                startActivityForResult(intent, IMAGE_PICK_CODE)
+//                tempImageBinding = bottomSheetBinding
+//            }
 
             // Post Blog
             bottomSheetBinding.btnPostBlog.setOnClickListener {
@@ -360,6 +366,43 @@
             dialog.show()
         }
 
+        private fun listenForNotifications() {
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+            val notifRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+                .getReference("notifications")
+                .child(currentUserId)
+
+            notificationListener = object : ChildEventListener {
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    val notification = snapshot.getValue(Notification::class.java)
+                    if (notification != null && !notification.isRead && notification.timestamp > notificationListenerStartTime) {
+                        playNotificationSound()
+
+                        Toast.makeText(
+                            this@BlogActivity, // or your correct context
+                            notification.message,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
+                override fun onChildRemoved(snapshot: DataSnapshot) {}
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+                override fun onCancelled(error: DatabaseError) {}
+            }
+
+
+            notifRef.addChildEventListener(notificationListener)
+        }
+
+        private fun playNotificationSound() {
+            val mediaPlayer = MediaPlayer.create(this, R.raw.ding)
+            mediaPlayer.setOnCompletionListener {
+                it.release()
+            }
+            mediaPlayer.start()
+        }
 
 
     }

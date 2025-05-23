@@ -64,7 +64,7 @@
                 android:layout_margin="5dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Edit Banner"
-                android:src="@drawable/ic_edit" />
+                android:src="@drawable/ic_edit1" />
 
 
             <LinearLayout
@@ -194,6 +194,7 @@
                         app:cornerRadius="16dp"
                         app:icon="@drawable/bg_recieve"
                         app:iconPadding="8dp"
+                        android:visibility="gone"
                         app:iconTint="@color/purple_500" />
 
                     <com.google.android.material.button.MaterialButton

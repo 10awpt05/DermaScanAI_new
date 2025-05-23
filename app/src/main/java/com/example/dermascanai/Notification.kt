@@ -8,5 +8,6 @@ data class Notification(
     val type: String = "", // "like" or "comment"
     val message: String = "",
     val timestamp: Long = 0,
-    var isRead: Boolean = false
+    var isRead: Boolean = false,
+    val status: String = ""
 )

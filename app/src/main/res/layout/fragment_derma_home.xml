@@ -153,7 +153,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginTop="15dp"
-                    android:text="4.5"
+                    android:hint="-"
                     android:textSize="25sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -166,7 +166,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="15dp"
             android:layout_marginTop="25dp"
-            android:text="Feature Dermatologist"
+            android:text="Feature Clinic"
             android:textSize="15sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -186,16 +186,32 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp">
 
-                <ImageView
-                    android:id="@+id/imageView6"
+                <androidx.fragment.app.FragmentContainerView
+                    android:id="@+id/popupMapFragment"
+                    android:name="com.google.android.gms.maps.SupportMapFragment"
                     android:layout_width="match_parent"
-                    android:layout_height="100dp"
-                    android:background="@drawable/bg_smothedge"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/default_profile"
+                    android:layout_height="200dp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardView12"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginStart="15dp"
+                    app:cardCornerRadius="50dp"
+                    app:layout_constraintBottom_toBottomOf="@+id/popupMapFragment"
+                    app:layout_constraintStart_toStartOf="@+id/popupMapFragment"
+                    app:layout_constraintTop_toBottomOf="@+id/popupMapFragment">
+
+                    <ImageView
+                        android:id="@+id/profileImageView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/default_profile" />
+                </androidx.cardview.widget.CardView>
 
                 <TextView
                     android:id="@+id/name"
@@ -205,35 +221,30 @@
                     android:text="Dr, Dummy Account"
                     android:textSize="15sp"
                     android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/imageView6" />
+                    app:layout_constraintBottom_toBottomOf="@+id/cardView12"
+                    app:layout_constraintStart_toEndOf="@+id/cardView12"
+                    app:layout_constraintTop_toBottomOf="@+id/popupMapFragment" />
 
-                <TextView
-                    android:id="@+id/dermaType"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Cosmetic"
-                    android:textColor="@color/blue"
-                    android:textSize="15sp"
-                    app:layout_constraintStart_toStartOf="@+id/name"
-                    app:layout_constraintTop_toBottomOf="@+id/name" />
+
 
                 <ImageView
                     android:id="@+id/star"
                     android:layout_width="15dp"
                     android:layout_height="15dp"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginTop="15dp"
                     android:src="@drawable/ic_star"
-                    app:layout_constraintStart_toStartOf="@id/dermaType"
-                    app:layout_constraintTop_toBottomOf="@id/dermaType" />
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/name" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
-                    android:text="4.5"
+                    android:hint="No Ratings yet"
                     android:textSize="15sp"
                     app:layout_constraintBottom_toBottomOf="@id/star"
-                    app:layout_constraintStart_toEndOf="@id/star"
+                    app:layout_constraintEnd_toStartOf="@id/star"
                     app:layout_constraintTop_toTopOf="@id/star" />
 
 
@@ -275,6 +286,7 @@
             app:layout_constraintTop_toTopOf="@+id/cardView10">
 
             <LinearLayout
+                android:id="@+id/appointmentDate"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical">

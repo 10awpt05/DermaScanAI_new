@@ -26,11 +26,34 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DermaScanAI"
         tools:targetApi="31">
+        <activity
+            android:name=".BlogView"
+            android:exported="false" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDpyYG8HgCsQikyz4szmzM5sBIjmyXPx94"/>
+            android:value="AIzaSyDpyYG8HgCsQikyz4szmzM5sBIjmyXPx94" />
+
         <activity
             android:name=".UserInboxActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ClinicProfile"
+            android:exported="false" />
+        <activity
+            android:name=".ClinicDetails"
+            android:exported="false" />
+        <activity
+            android:name=".ScanDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DiseaseDetails"
+            android:exported="false" />
+        <activity
+            android:name=".DermaRegister"
+            android:exported="false" />
+        <activity
+            android:name=".EditClinicProfile"
             android:exported="false" />
         <activity
             android:name=".ChatUserListActivity"
@@ -44,23 +67,22 @@
         <activity
             android:name=".BookingApprovalRecords"
             android:exported="false"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".ScanDetailActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".DiseaseDetails"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".DermaRegister"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".DermaEditInfo"
-            android:exported="false"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait" /> <!-- <activity -->
+        <!-- android:name=".ScanDetailActivity" -->
+        <!-- android:exported="false" -->
+        <!-- android:screenOrientation="portrait" /> -->
+        <!-- <activity -->
+        <!-- android:name=".DiseaseDetails" -->
+        <!-- android:exported="false" -->
+        <!-- android:screenOrientation="portrait" /> -->
+        <!-- <activity -->
+        <!-- android:name=".DermaRegister" -->
+        <!-- android:exported="false" -->
+        <!-- android:screenOrientation="portrait" /> -->
+        <!-- <activity -->
+        <!-- android:name=".DermaEditInfo" -->
+        <!-- android:exported="false" -->
+        <!-- android:screenOrientation="portrait" /> -->
         <activity
             android:name=".BookingHistory"
             android:exported="false"
@@ -91,11 +113,10 @@
         <activity
             android:name=".Booking"
             android:exported="false"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".DermaDetails"
-            android:exported="false"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait" /> <!-- <activity -->
+        <!-- android:name=".DermaDetails" -->
+        <!-- android:exported="false" -->
+        <!-- android:screenOrientation="portrait" /> -->
         <activity
             android:name=".PrivacyPolicy"
             android:exported="false"

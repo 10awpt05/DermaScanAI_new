@@ -33,10 +33,13 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.dermascanai.Login
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +49,9 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+
+
+
 
 class MainPage : AppCompatActivity() {
     private lateinit var binding: ActivityMainPageBinding
@@ -72,6 +78,10 @@ class MainPage : AppCompatActivity() {
 
     private var selectedImageView: ImageView? = null
 
+    private lateinit var databaseA: DatabaseReference
+    private lateinit var adapter: ClinicAdapter
+    private val clinicList = mutableListOf<ClinicInfo>()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +91,10 @@ class MainPage : AppCompatActivity() {
         firebase = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
 
+        databaseA = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+            .getReference("clinicInfo")
+
+        loadClinicsFromFirebase()
         checkPermissions()
 
         try {
@@ -90,8 +104,28 @@ class MainPage : AppCompatActivity() {
             Toast.makeText(this, "Model loading failed", Toast.LENGTH_LONG).show()
         }
 
+//        clinicList.add(
+//            ClinicInfo(
+//                clinicName = "Wellness Clinic",
+//                email = "wellness@email.com",
+//                clinicPhone = "09251234567",
+//                address = "Manila, Philippines",
+//                profileImage = null // or your Base64 string
+//            )
+//        )
 
 
+
+
+        adapter = ClinicAdapter(this, clinicList) { clickedClinic ->
+            val intent = Intent(this, ClinicDetails::class.java)
+            intent.putExtra("email", clickedClinic.email)  // Pass just the email string
+            startActivity(intent)
+        }
+
+
+        binding.nerbyClinic.layoutManager = LinearLayoutManager(this)
+        binding.nerbyClinic.adapter = adapter
 
         binding.scanButton.setOnClickListener {
             showImagePickerDialog()
@@ -117,12 +151,59 @@ class MainPage : AppCompatActivity() {
                 Toast.makeText(this@MainPage, "Failed to load user role", Toast.LENGTH_SHORT).show()
             }
         })
-
-
     }
 
+    private fun loadClinicsFromFirebase() {
+        databaseA.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                clinicList.clear()
+                for (clinicSnapshot in snapshot.children) {
+                    val map = clinicSnapshot.value as? Map<String, Any> ?: continue
+
+                    // Safely convert clinicPhone to String regardless of stored type
+                    val phoneValue = map["clinicPhone"]
+                    val clinicPhone = when (phoneValue) {
+                        is String -> phoneValue
+                        is Long -> phoneValue.toString()
+                        is Int -> phoneValue.toString()
+                        else -> null
+                    }
+
+                    // Manually construct ClinicInfo
+                    val clinic = ClinicInfo(
+                        clinicName = map["clinicName"] as? String,
+                        email = map["email"] as? String,
+                        clinicPhone = clinicPhone,
+                        profileImage = map["profileImage"] as? String,
+                        address = map["address"] as? String,
+                        // Add other fields as needed, safely casted
+                    )
+
+                    clinicList.add(clinic)
+
+
+                }
+
+                adapter.notifyDataSetChanged()
+
+
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@MainPage, "Failed to load clinics: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+        adapter = ClinicAdapter(this, clinicList) { clickedClinic ->
+            val intent = Intent(this, ClinicDetails::class.java)
+            intent.putExtra("email", clickedClinic)
+            startActivity(intent)
+        }
+    }
+
+
+
     private fun loadModelFile(): MappedByteBuffer {
-        val fileDescriptor: AssetFileDescriptor = assets.openFd("new_model2.tflite")
+        val fileDescriptor: AssetFileDescriptor = assets.openFd("new_model.tflite")
         val inputStream = fileDescriptor.createInputStream()
         val fileChannel = inputStream.channel
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, fileDescriptor.startOffset, fileDescriptor.declaredLength)
@@ -212,6 +293,8 @@ class MainPage : AppCompatActivity() {
                     startActivity(intent)
                 }
                 binding.saveScanButton.visibility = View.VISIBLE
+                binding.nerbyClinic.visibility = View.VISIBLE
+                binding.textClinic.visibility = View.VISIBLE
 
                 binding.saveScanButton.setOnClickListener {
 
@@ -346,7 +429,7 @@ class MainPage : AppCompatActivity() {
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
         val input = preprocessImage(resizedBitmap)
 
-        val output = Array(1) { FloatArray(8) } //FloatArray(8) = number of datasets
+        val output = Array(1) { FloatArray(7) } //FloatArray(7) = number of datasets
         interpreter?.run(input, output)
 
         val maxIndex = output[0].indices.maxByOrNull { output[0][it] } ?: -1
@@ -379,7 +462,7 @@ class MainPage : AppCompatActivity() {
             "Acne",
             "Ezcema",
             "Melanoma",
-            "Normal",
+//            "Normal",
             "Psoriasis",
             "Serborrheic Keratoses",
             "Tinea Ringworm",
@@ -394,7 +477,7 @@ class MainPage : AppCompatActivity() {
             "Acne" -> "Cleanse your face twice daily with a mild cleanser and apply over-the-counter benzoyl peroxide or salicylic acid products to reduce inflammation and bacteria."
             "Eczema" -> "Keep the skin moisturized with fragrance-free creams or ointments; apply a cool compress to relieve itching and avoid known irritants."
             "Melanoma" -> "Seek immediate medical attention. Melanoma is a serious form of skin cancer and cannot be treated with home remedies."
-            "Normal" -> "You have a Normal skin. Keep it Up."
+//            "Normal" -> "You have a Normal skin. Keep it Up."
             "Psoriasis" -> " Apply aloe vera gel or a moisturizer with coal tar or salicylic acid; take short daily baths with oatmeal or Epsom salt to soothe itching."
             "Serborrheic Keratoses" -> "These are generally harmless; however, moisturizers and gentle exfoliation may help reduce irritation. For removal, consult a dermatologist."
             "Tinea Ringworm"->"Apply an over-the-counter antifungal cream (like clotrimazole or terbinafine) twice daily and keep the affected area clean and dry."

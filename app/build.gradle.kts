@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.gms.google.services)
     id("com.google.devtools.ksp")
+    id("kotlin-parcelize")
+    id("kotlin-android")
 }
 
 android {
@@ -53,6 +55,7 @@ dependencies {
 
     implementation("com.github.bumptech.glide:glide:4.15.0")
     implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.firebase.firestore)
 //    implementation(libs.androidx.swiperefreshlayout)
     ksp("com.github.bumptech.glide:compiler:4.15.0")
 

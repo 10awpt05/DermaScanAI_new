@@ -53,7 +53,7 @@ class UserProfileFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentProfileUserBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -79,11 +79,6 @@ class UserProfileFragment : Fragment() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             true
         )
-
-        binding.btnMsg.setOnClickListener {
-            val intent = Intent(context, UserInboxActivity::class.java)
-            startActivity(intent)
-        }
 
         binding.scanRec.setOnClickListener {
             val intent = Intent(requireContext(), ScanRecords::class.java)
@@ -200,8 +195,8 @@ class UserProfileFragment : Fragment() {
         }
 
         binding.btnToggleInfo.setOnClickListener {
-        val intent = Intent(requireContext(), PersonalInfo::class.java)
-        startActivity(intent)
+            val intent = Intent(requireContext(), PersonalInfo::class.java)
+            startActivity(intent)
         }
         binding.editBannerIcon.setOnClickListener {
             val banners = listOf(

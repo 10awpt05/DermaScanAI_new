@@ -8,8 +8,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dermascanai.databinding.ItemDermaListBinding
 
-
-class AdapterDermaHomeList(private val userList: List<DermaInfo>) :
+class AdapterDermaHomeList(private val userList: List<ClinicInfo>) :
     RecyclerView.Adapter<AdapterDermaHomeList.DermaUserViewHolder>() {
 
     inner class DermaUserViewHolder(val binding: ItemDermaListBinding) :
@@ -23,25 +22,28 @@ class AdapterDermaHomeList(private val userList: List<DermaInfo>) :
     override fun onBindViewHolder(holder: DermaUserViewHolder, position: Int) {
         val user = userList[position]
         with(holder.binding) {
-            name.text = user.name
+            textViewName.text = user.name ?: "No Name"
+            textViewRating.text = String.format("%.1f", user.rating ?: 0.0)
 
-            if (!user.profileImage.isNullOrEmpty()) {
+
+            val profileImageString = user.logoImage
+            if (!profileImageString.isNullOrEmpty()) {
                 try {
-                    val decodedBytes = Base64.decode(user.profileImage, Base64.DEFAULT)
+                    val decodedBytes = Base64.decode(profileImageString, Base64.DEFAULT)
                     val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-                    profPic.setImageBitmap(bitmap)
+                    imageViewProfile.setImageBitmap(bitmap)
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    profPic.setImageResource(R.drawable.ic_profile2)
+                    imageViewProfile.setImageResource(R.drawable.ic_profile2)
                 }
             } else {
-                profPic.setImageResource(R.drawable.ic_profile2)
+                imageViewProfile.setImageResource(R.drawable.ic_profile2)
             }
 
             root.setOnClickListener {
                 val context = it.context
-                val intent = Intent(context, DermaDetails::class.java).apply {
-                    putExtra("userEmail", user.email)
+                val intent = Intent(context, ClinicDetails::class.java).apply {
+                    putExtra("email", user.email)
                 }
                 context.startActivity(intent)
             }

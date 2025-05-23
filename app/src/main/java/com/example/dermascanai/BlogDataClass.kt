@@ -20,9 +20,12 @@ data class Comment(
     val commentId: String = "",
     val postId: String = "",
     val userId: String = "",
+    val userName: String = "",
     val userProfileImageBase64: String? = null,
     val comment: String = "",
-    val timestamp: Long = 0L
+    val timestamp: Long = 0L,
+    val parentCommentId: String? = null,
+    var replies: MutableList<Comment> = mutableListOf()
 )
 
 

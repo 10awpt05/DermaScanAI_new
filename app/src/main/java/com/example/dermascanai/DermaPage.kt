@@ -3,22 +3,36 @@ package com.example.dermascanai
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Intent
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.example.dermascanai.UserPage
 import com.example.dermascanai.databinding.ActivityDermaPageBinding
 import com.example.dermascanai.databinding.ActivityUserPageBinding
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
 
 class DermaPage : AppCompatActivity() {
     private lateinit var binding: ActivityDermaPageBinding
     private var isFabMenuOpen = false
+    private lateinit var notificationListener: ChildEventListener
+    private var notificationListenerStartTime: Long = 0
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDermaPageBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        notificationListenerStartTime = System.currentTimeMillis()
+
+        listenForNotifications()
 
         showHomeText()
         val fabCard = binding.fabCard
@@ -204,4 +218,41 @@ class DermaPage : AppCompatActivity() {
             .start()
     }
 
+    private fun listenForNotifications() {
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val notifRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+            .getReference("notifications")
+            .child(currentUserId)
+
+        notificationListener = object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                val notification = snapshot.getValue(Notification::class.java)
+                if (notification != null && !notification.isRead && notification.timestamp > notificationListenerStartTime) {
+                    playNotificationSound()
+
+                    Toast.makeText(
+                        this@DermaPage, // or your correct context
+                        notification.message,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onChildRemoved(snapshot: DataSnapshot) {}
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onCancelled(error: DatabaseError) {}
+        }
+
+
+        notifRef.addChildEventListener(notificationListener)
+    }
+
+    private fun playNotificationSound() {
+        val mediaPlayer = MediaPlayer.create(this, R.raw.ding)
+        mediaPlayer.setOnCompletionListener {
+            it.release()
+        }
+        mediaPlayer.start()
+    }
 }

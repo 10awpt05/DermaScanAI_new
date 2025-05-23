@@ -47,10 +47,11 @@ class DermaProfileFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentDermaProfileBinding.inflate(inflater, container, false)
         return binding.root
     }
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -74,10 +75,6 @@ class DermaProfileFragment : Fragment() {
 
         binding.Records.setOnClickListener {
             val intent = Intent(requireContext(), DermaRecords::class.java)
-            startActivity(intent)
-        }
-        binding.btnMsg.setOnClickListener {
-            val intent = Intent(context, ChatUserListActivity::class.java)
             startActivity(intent)
         }
 
@@ -191,7 +188,7 @@ class DermaProfileFragment : Fragment() {
         }
 
         binding.btnToggleInfo.setOnClickListener {
-            val intent = Intent(requireContext(), DermaEditInfo::class.java)
+            val intent = Intent(requireContext(), ClinicProfile::class.java)
             startActivity(intent)
         }
         binding.editBannerIcon.setOnClickListener {
@@ -239,31 +236,35 @@ class DermaProfileFragment : Fragment() {
 
     private fun fetchUserData() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
-        val dermaRef: DatabaseReference = database.getReference("dermaInfo").child(userId ?: return)
+        val dermaRef: DatabaseReference = database.getReference("clinicInfo").child(userId ?: return)
 
         dermaRef.get().addOnSuccessListener { snapshot ->
+            if (!isAdded || _binding == null) return@addOnSuccessListener
+
             if (snapshot.exists()) {
-                val dermaInfo = snapshot.getValue(DermaInfo::class.java)
+                val dermaInfo = snapshot.getValue(ClinicInfo::class.java)
 
+                _binding?.apply {
+                    fullName.text = dermaInfo?.name ?: ""
+                    val text = (dermaInfo?.status ?: "")
+                    status.text = "Status: $text"
 
-                binding.fullName.setText(dermaInfo?.name ?: "")
-                val text = (dermaInfo?.status ?: "")
-                binding.status.text = "Status: $text "
-
-                dermaInfo?.profileImage?.let {
-                    if (it.isNotEmpty()) {
-                        val decodedBytes = Base64.decode(it, Base64.DEFAULT)
-                        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-                        binding.profPic.setImageBitmap(bitmap)
+                    dermaInfo?.logoImage?.let {
+                        if (it.isNotEmpty()) {
+                            val decodedBytes = Base64.decode(it, Base64.DEFAULT)
+                            val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                            profPic.setImageBitmap(bitmap)
+                        }
                     }
                 }
             } else {
-//                Toast.makeText(this, "No user data found", Toast.LENGTH_SHORT).show()
             }
         }.addOnFailureListener {
-//            Toast.makeText(this, "Failed to fetch user data: ${it.message}", Toast.LENGTH_SHORT).show()
+            if (!isAdded || _binding == null) return@addOnFailureListener
         }
     }
+
+
 
     private fun logoutUser() {
         val builder = android.app.AlertDialog.Builder(requireContext())

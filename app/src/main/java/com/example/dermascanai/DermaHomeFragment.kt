@@ -1,12 +1,12 @@
 package com.example.dermascanai
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.location.Geocoder
 import android.os.Bundle
 import android.util.Base64
-import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,37 +15,35 @@ import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
 import com.example.dermascanai.databinding.FragmentDermaHomeBinding
-import com.example.dermascanai.databinding.FragmentHomeUserBinding
 import com.example.dermascanai.databinding.LayoutNotificationPopupBinding
-import com.google.android.material.navigation.NavigationView
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
+import java.util.*
 
 class DermaHomeFragment : Fragment() {
     private var _binding: FragmentDermaHomeBinding? = null
     private val binding get() = _binding!!
-    private lateinit var mDatabase: DatabaseReference
     private lateinit var mAuth: FirebaseAuth
     private lateinit var database: FirebaseDatabase
     private lateinit var notificationBinding: LayoutNotificationPopupBinding
     private lateinit var notificationAdapter: NotificationAdapter
     private val notificationList = mutableListOf<Notification>()
-
+    private lateinit var mapFragment: SupportMapFragment
+    private lateinit var googleMap: GoogleMap
 
     private val notificationRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
         .getReference("notifications")
-
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -66,44 +64,11 @@ class DermaHomeFragment : Fragment() {
         val navView = binding.navigationView
         database = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
         mAuth = FirebaseAuth.getInstance()
-        mDatabase = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("userInfo")
-        val currentUserEmail = FirebaseAuth.getInstance().currentUser?.email
-        val bookingsRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("bookings")
-
-//        bookingsRef.orderByChild("doctorEmail").equalTo(currentUserEmail)
-//            .addListenerForSingleValueEvent(object : ValueEventListener {
-//                override fun onDataChange(snapshot: DataSnapshot) {
-//                    var latestBooking: Appointment? = null
-//                    var latestTime: Long = 0
-//
-//                    for (child in snapshot.children) {
-//                        val booking = child.getValue(Appointment::class.java)
-//                        if (booking != null && booking.createdAt != null && booking.createdAt > latestTime) {
-//                            latestTime = booking.createdAt
-//                            latestBooking = booking
-//                        }
-//                    }
-//
-////                    binding.nameAppoint.text = booking.time
-//
-//                    latestBooking?.let {
-//
-//                    } ?: run {
-//                        Log.d("Booking", "No bookings found")
-//                    }
-//                }
-//
-//                override fun onCancelled(error: DatabaseError) {
-//                    Log.e("Booking", "Error: ${error.message}")
-//                }
-//            })
 
         val headerView = navView.getHeaderView(0)
         val closeDrawerBtn = headerView.findViewById<ImageView>(R.id.closeDrawerBtn)
 
         binding.dateTimeText.text = formatted
-
-        val userId = mAuth.currentUser?.uid
 
         notificationBinding = LayoutNotificationPopupBinding.inflate(layoutInflater)
         val popupWindow = PopupWindow(
@@ -113,14 +78,12 @@ class DermaHomeFragment : Fragment() {
             true
         )
 
-
         val notifRecyclerView = notificationBinding.notificationRecyclerView
         notifRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-
-
         notificationAdapter = NotificationAdapter(requireContext(), notificationList)
         notifRecyclerView.adapter = notificationAdapter
 
+        val userId = mAuth.currentUser?.uid
         val userNotificationsRef = notificationRef.child(userId!!)
         userNotificationsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -130,34 +93,21 @@ class DermaHomeFragment : Fragment() {
                     val notif = notifSnapshot.getValue(Notification::class.java)
                     notif?.let {
                         notificationList.add(it)
-                        if (!it.isRead) {
-                            hasUnread = true
-                        }
+                        if (!it.isRead) hasUnread = true
                     }
                 }
-
                 notificationList.sortByDescending { it.timestamp }
-
                 notificationAdapter.notifyDataSetChanged()
-
                 binding.notificationDot.visibility = if (hasUnread) View.VISIBLE else View.GONE
             }
-
             override fun onCancelled(error: DatabaseError) {
                 Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
             }
         })
 
-        if (userId != null) {
-            fetchUserData()
-        } else {
-            Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
-        }
-
         binding.notificationIcon.setOnClickListener {
             popupWindow.showAsDropDown(binding.notificationIcon, -100, 20)
             binding.notificationDot.visibility = View.GONE
-
             userNotificationsRef.get().addOnSuccessListener { snapshot ->
                 for (notifSnapshot in snapshot.children) {
                     notifSnapshot.ref.child("isRead").setValue(true)
@@ -165,14 +115,9 @@ class DermaHomeFragment : Fragment() {
             }
         }
 
-
-
-
         binding.menuIcon.setOnClickListener {
-            val drawerLayout = requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
             drawerLayout.openDrawer(GravityCompat.END)
         }
-
 
         closeDrawerBtn.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.END)
@@ -180,86 +125,156 @@ class DermaHomeFragment : Fragment() {
 
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.settings -> {
-                    Toast.makeText(context, "Settings Clicked", Toast.LENGTH_SHORT).show()
-                }
-                R.id.nav_terms -> {
-                    val intent = Intent(requireContext(), TermsConditions::class.java)
-                    startActivity(intent)
-                }
-                R.id.privacy -> {
-                    val intent = Intent(requireContext(), PrivacyPolicy::class.java)
-                    startActivity(intent)
-                }
-                R.id.nav_logout -> {
-                    logoutUser()
-
-                }
+                R.id.settings -> Toast.makeText(context, "Settings Clicked", Toast.LENGTH_SHORT).show()
+                R.id.nav_terms -> startActivity(Intent(requireContext(), TermsConditions::class.java))
+                R.id.privacy -> startActivity(Intent(requireContext(), PrivacyPolicy::class.java))
+                R.id.nav_logout -> logoutUser()
             }
             drawerLayout.closeDrawers()
             true
         }
+
+        binding.appointmentDate.setOnClickListener {
+            val intent = Intent(requireContext(), BookingApprovalRecords::class.java)
+            startActivity(intent)
+        }
+
+        val dateText = getCurrentFormattedDate()
+        binding.currentTime.text = dateText
+
+        checkApprovedBookingForToday("Derma_Clinic_Dummy", requireContext()) { isApproved ->
+            binding.nameAppoint.text = if (isApproved) "You have an approved booking today" else "No Approved Booking Today"
+        }
+        fetchUserData()
+        loadFeaturedClinic() // Load a random featured clinic on start
     }
 
+    private fun loadFeaturedClinic() {
+        val clinicRef = database.getReference("clinicInfo")
+        clinicRef.get().addOnSuccessListener { snapshot ->
+            val clinics = snapshot.children.mapNotNull { it.getValue(ClinicInfo::class.java) }
+            if (clinics.isNotEmpty()) {
+                val featuredClinic = clinics.random()
+                binding.name.text = featuredClinic.name
+
+                if (!featuredClinic.logoImage.isNullOrEmpty()) {
+                    val decodedBytes = Base64.decode(featuredClinic.logoImage, Base64.DEFAULT)
+                    val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                    binding.profileImageView.setImageBitmap(bitmap)
+                }
+
+                val address = featuredClinic.clinicAddress ?: ""
+                if (address.isNotEmpty()) {
+                    showClinicOnMap(address)
+                }
 
 
+            } else {
+                Toast.makeText(requireContext(), "No clinics found.", Toast.LENGTH_SHORT).show()
+            }
+        }.addOnFailureListener {
+            Toast.makeText(requireContext(), "Failed to load clinics.", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    private fun showClinicOnMap(address: String) {
+        mapFragment = childFragmentManager.findFragmentById(R.id.popupMapFragment) as SupportMapFragment
+        mapFragment.getMapAsync { gMap ->
+            googleMap = gMap
+            showLocationOnMap(address)
+        }
     }
 
     private fun fetchUserData() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
-        val dermaRef: DatabaseReference = database.getReference("dermaInfo").child(userId ?: return)
+        val dermaRef: DatabaseReference = database.getReference("clinicInfo").child(userId ?: return)
 
         dermaRef.get().addOnSuccessListener { snapshot ->
             if (snapshot.exists()) {
-                val dermaInfo = snapshot.getValue(DermaInfo::class.java)
+                val clinicInfo = snapshot.getValue(ClinicInfo::class.java)
 
+                binding.fullName.setText(clinicInfo?.name ?: "")
 
-                binding.fullName.setText(dermaInfo?.name ?: "")
-
-
-                dermaInfo?.profileImage?.let {
+                clinicInfo?.logoImage?.let {
                     if (it.isNotEmpty()) {
                         val decodedBytes = Base64.decode(it, Base64.DEFAULT)
                         val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
                         binding.profileView.setImageBitmap(bitmap)
                     }
                 }
-            } else {
-//
+
             }
         }.addOnFailureListener {
-//
+            Toast.makeText(context, "Failed to fetch clinic info", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun showLocationOnMap(address: String) {
+        val geocoder = Geocoder(requireContext(), Locale.getDefault())
+        Thread {
+            try {
+                val addresses = geocoder.getFromLocationName(address, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val location = addresses[0]
+                    val latLng = LatLng(location.latitude, location.longitude)
+                    requireActivity().runOnUiThread {
+                        googleMap.clear()
+                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+                        googleMap.addMarker(MarkerOptions().position(latLng).title("Derma Location"))
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
+    }
 
     private fun logoutUser() {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("Logout")
         builder.setMessage("Are you sure you want to logout?")
-
         builder.setPositiveButton("Yes") { dialog, _ ->
             FirebaseAuth.getInstance().signOut()
             Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
-
             val intent = Intent(requireActivity(), Login::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
             dialog.dismiss()
         }
-
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.dismiss()
-        }
-
-        val dialog = builder.create()
-        dialog.show()
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+        builder.create().show()
     }
 
+    private fun getCurrentFormattedDate(): String {
+        val currentDate = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("MMM dd - E", Locale.ENGLISH)
+        return currentDate.format(formatter)
+    }
 
+    private fun checkApprovedBookingForToday(clinicId: String, context: Context, callback: (Boolean) -> Unit) {
+        val bookingsRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+            .getReference("clinicBookings")
+            .child(clinicId)
+        val formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy")
+        val todayFormatted = LocalDate.now().format(formatter)
 
+        bookingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val found = snapshot.children.any {
+                    it.child("date").getValue(String::class.java) == todayFormatted &&
+                            it.child("status").getValue(String::class.java)?.equals("approved", true) == true
+                }
+                callback(found)
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(context, "Error checking bookings: ${error.message}", Toast.LENGTH_SHORT).show()
+                callback(false)
+            }
+        })
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 }

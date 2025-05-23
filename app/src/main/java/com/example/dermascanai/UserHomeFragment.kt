@@ -13,15 +13,14 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.example.dermascanai.BlogActivity
-import com.example.dermascanai.DoctorLists
+import androidx.recyclerview.widget.GridLayoutManager
 import com.example.dermascanai.databinding.FragmentHomeUserBinding
 import com.example.dermascanai.databinding.LayoutNotificationPopupBinding
+import com.example.dermascanai.databinding.NavHeaderBinding
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -31,8 +30,6 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import android.Manifest
-
 
 
 class UserHomeFragment : Fragment() {
@@ -46,32 +43,21 @@ class UserHomeFragment : Fragment() {
     private lateinit var notificationAdapter: NotificationAdapter
     private val notificationList = mutableListOf<Notification>()
 
+    // Store event listeners so we can remove them in onDestroyView
+    private var clinicEventListener: ValueEventListener? = null
+    private var tipEventListener: ValueEventListener? = null
+    private var notificationEventListener: ValueEventListener? = null
 
     private val notificationRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
         .getReference("notifications")
-
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//
-//    }
-
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentHomeUserBinding.inflate(inflater, container, false)
-
-        ActivityCompat.requestPermissions(
-            requireActivity(),
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-            1001
-        )
-
         return binding.root
     }
-
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -86,13 +72,17 @@ class UserHomeFragment : Fragment() {
         mAuth = FirebaseAuth.getInstance()
         mDatabase = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("userInfo")
 
+        val clinicList = mutableListOf<ClinicInfo>()
+        val databaseRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("clinicInfo")
 
-        val dermaList = mutableListOf<DermaInfo>()
-        val databaseRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("dermaInfo")
+        val headerBinding = NavHeaderBinding.bind(navView.getHeaderView(0))
+        val closeDrawerBtn = headerBinding.closeDrawerBtn
 
 
-        val headerView = navView.getHeaderView(0)
-        val closeDrawerBtn = headerView.findViewById<ImageView>(R.id.closeDrawerBtn)
+        headerBinding.closeDrawerBtn.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.END)
+        }
+
 
         binding.dateTimeText.text = formatted
 
@@ -106,60 +96,66 @@ class UserHomeFragment : Fragment() {
             true
         )
 
+        val gridLayoutManager = GridLayoutManager(requireContext(), 2)
+        binding.dermaRecycleView.layoutManager = gridLayoutManager
+//        binding.dermaRecycleView.adapter = AdapterDoctorList(clinicList)
+        binding.dermaRecycleView.setHasFixedSize(true)
 
         val notifRecyclerView = notificationBinding.notificationRecyclerView
         notifRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-
         notificationAdapter = NotificationAdapter(requireContext(), notificationList)
         notifRecyclerView.adapter = notificationAdapter
 
-        val userNotificationsRef = notificationRef.child(userId!!)
-        userNotificationsRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                notificationList.clear()
-                var hasUnread = false
-                for (notifSnapshot in snapshot.children) {
-                    val notif = notifSnapshot.getValue(Notification::class.java)
-                    notif?.let {
-                        notificationList.add(it)
-                        if (!it.isRead) {
-                            hasUnread = true
+        if (userId != null) {
+            notificationEventListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (_binding == null) return // Check if view is still valid
+
+                    notificationList.clear()
+                    var hasUnread = false
+                    for (notifSnapshot in snapshot.children) {
+                        val notif = notifSnapshot.getValue(Notification::class.java)
+                        notif?.let {
+                            notificationList.add(it)
+                            if (!it.isRead) {
+                                hasUnread = true
+                            }
                         }
                     }
+
+                    notificationList.sortByDescending { it.timestamp }
+
+                    notificationAdapter.notifyDataSetChanged()
+
+                    binding.notificationDot.visibility = if (hasUnread) View.VISIBLE else View.GONE
                 }
 
-                notificationList.sortByDescending { it.timestamp }
-
-                notificationAdapter.notifyDataSetChanged()
-
-                binding.notificationDot.visibility = if (hasUnread) View.VISIBLE else View.GONE
+                override fun onCancelled(error: DatabaseError) {
+                    if (isAdded && context != null) { // Check if fragment is still attached
+                        Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
-            }
-        })
+            notificationRef.child(userId).addListenerForSingleValueEvent(notificationEventListener!!)
 
-        if (userId != null) {
             getUserData(userId)
         } else {
-            Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+            if (isAdded && context != null) {
+                Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+            }
         }
-
-        binding.btnOpenMap.setOnClickListener {
-            val mapDialog = MapPopupDialogFragment()
-            mapDialog.show(parentFragmentManager, "mapDialog")
-        }
-
 
         binding.notificationIcon.setOnClickListener {
             popupWindow.showAsDropDown(binding.notificationIcon, -100, 20)
             binding.notificationDot.visibility = View.GONE
 
-            userNotificationsRef.get().addOnSuccessListener { snapshot ->
-                for (notifSnapshot in snapshot.children) {
-                    notifSnapshot.ref.child("isRead").setValue(true)
+            if (userId != null) {
+                notificationRef.child(userId).get().addOnSuccessListener { snapshot ->
+                    for (notifSnapshot in snapshot.children) {
+                        notifSnapshot.ref.child("isRead").setValue(true)
+                    }
                 }
             }
         }
@@ -169,12 +165,10 @@ class UserHomeFragment : Fragment() {
             startActivity(intent)
         }
 
-
         binding.menuIcon.setOnClickListener {
             val drawerLayout = requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
             drawerLayout.openDrawer(GravityCompat.END)
         }
-
 
         closeDrawerBtn.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.END)
@@ -195,7 +189,6 @@ class UserHomeFragment : Fragment() {
                 }
                 R.id.nav_logout -> {
                     logoutUser()
-
                 }
             }
             drawerLayout.closeDrawers()
@@ -207,8 +200,10 @@ class UserHomeFragment : Fragment() {
 
         val tipId = ((System.currentTimeMillis() / (1000 * 60 * 60 * 24)) % 20 + 1).toInt()
 
-        tipRef.child(tipId.toString()).addListenerForSingleValueEvent(object : ValueEventListener {
+        tipEventListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                if (_binding == null) return // Check if view is still valid
+
                 val tip = snapshot.getValue(String::class.java)
                 if (tip != null) {
                     binding.dailyTips.text = tip
@@ -218,42 +213,86 @@ class UserHomeFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
+                if (_binding == null) return // Check if view is still valid
+
                 binding.dailyTips.text = "Failed to load tip."
                 Log.e("DailyTips", "Error: ${error.message}")
             }
-        })
+        }
+
+        tipRef.child(tipId.toString()).addListenerForSingleValueEvent(tipEventListener!!)
 
         binding.dermaRecycleView.layoutManager = LinearLayoutManager(context)
-        databaseRef.addValueEventListener(object : ValueEventListener {
+
+        // More robust error handling for the database query
+        clinicEventListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                dermaList.clear()
+                if (_binding == null) return // Check if view is still valid
+
+                clinicList.clear()
                 var count = 0
+
+                if (!snapshot.exists()) {
+                    Log.e("Database", "No data found at clinicInfo path")
+                    if (isAdded && context != null) {
+                        Toast.makeText(requireContext(), "No clinic data available", Toast.LENGTH_SHORT).show()
+                    }
+                    return
+                }
+
                 for (userSnap in snapshot.children) {
-                    val user = userSnap.getValue(DermaInfo::class.java)
-                    if (user != null) {
-                        println("User found: ${user.name}, role: ${user.role}")
-                        if (user.role.lowercase() == "derma") {
-                            dermaList.add(user)
-                            count++
+                    try {
+                        val user = userSnap.getValue(ClinicInfo::class.java)
+                        if (user != null) {
+                            println("User found: ${user.name}, role: ${user.role}")
+                            if (user.role.lowercase() == "derma") {
+                                clinicList.add(user)
+                                count++
+                            }
                         }
+                    } catch (e: Exception) {
+                        Log.e("Database", "Error deserializing clinic data", e)
                     }
                 }
 
-                binding.dermaRecycleView.adapter = AdapterDermaHomeList(dermaList)
-            }
+                if (clinicList.isEmpty() && isAdded && context != null) {
+                    Toast.makeText(requireContext(), "No derma clinics found", Toast.LENGTH_SHORT).show()
+                }
 
+                binding.dermaRecycleView.adapter = AdapterDermaHomeList(clinicList)
+            }
 
             override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(requireContext(), "Failed to load users", Toast.LENGTH_SHORT).show()
+                Log.e("Database", "Database error: ${error.message}")
+                if (isAdded && context != null) {
+                    Toast.makeText(requireContext(), "Failed to load clinics: ${error.message}", Toast.LENGTH_SHORT).show()
+                }
             }
-        })
+        }
+
+        databaseRef.addValueEventListener(clinicEventListener!!)
     }
-
-
-
 
     override fun onDestroyView() {
         super.onDestroyView()
+
+        // Remove all event listeners to prevent callbacks after view is destroyed
+        val databaseRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+
+        clinicEventListener?.let {
+            databaseRef.getReference("clinicInfo").removeEventListener(it)
+        }
+
+        tipEventListener?.let {
+            databaseRef.getReference("dailyTips").removeEventListener(it)
+        }
+
+        val userId = mAuth.currentUser?.uid
+        if (userId != null && notificationEventListener != null) {
+            notificationRef.child(userId).removeEventListener(notificationEventListener!!)
+        }
+
+        // Clear the binding
         _binding = null
     }
 
@@ -261,6 +300,8 @@ class UserHomeFragment : Fragment() {
         val userRef = mDatabase.child(userId)
 
         userRef.get().addOnSuccessListener { snapshot ->
+            if (_binding == null) return@addOnSuccessListener
+
             if (snapshot.exists()) {
                 val user = snapshot.getValue(UserInfo::class.java)
 
@@ -275,26 +316,34 @@ class UserHomeFragment : Fragment() {
                             binding.profileView.setImageBitmap(decodedBitmap)
                         } catch (e: Exception) {
                             Log.e("UserProfileFragment", "Error decoding Base64 image", e)
-                            Toast.makeText(context, "Error loading profile image", Toast.LENGTH_SHORT).show()
+                            if (isAdded && context != null) {
+                                Toast.makeText(context, "Error loading profile image", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     } else {
-                        Glide.with(this)
-                            .load(R.drawable.ic_profile)
-                            .into(binding.profileView)
+                        if (isAdded && context != null) {
+                            Glide.with(this)
+                                .load(R.drawable.ic_profile)
+                                .into(binding.profileView)
+                        }
                     }
-
                 } else {
-                    Toast.makeText(context, "User data not found", Toast.LENGTH_SHORT).show()
+                    if (isAdded && context != null) {
+                        Toast.makeText(context, "User data not found", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } else {
-                Toast.makeText(context, "User not found in database", Toast.LENGTH_SHORT).show()
+                if (isAdded && context != null) {
+                    Toast.makeText(context, "User not found in database", Toast.LENGTH_SHORT).show()
+                }
             }
         }.addOnFailureListener { e ->
             Log.e("UserProfileFragment", "Error fetching user data", e)
-            Toast.makeText(context, "Failed to retrieve user data", Toast.LENGTH_SHORT).show()
+            if (isAdded && context != null) {
+                Toast.makeText(context, "Failed to retrieve user data", Toast.LENGTH_SHORT).show()
+            }
         }
     }
-
 
     private fun logoutUser() {
         val builder = AlertDialog.Builder(requireContext())
@@ -318,7 +367,4 @@ class UserHomeFragment : Fragment() {
         val dialog = builder.create()
         dialog.show()
     }
-
-
-
 }
