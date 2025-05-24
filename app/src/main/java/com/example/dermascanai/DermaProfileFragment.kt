@@ -133,6 +133,14 @@ class DermaProfileFragment : Fragment() {
 
         }
 
+        binding.ratings.setOnClickListener {
+            val clinicId = mAuth.currentUser?.uid
+            val intent = Intent(requireContext(), RatingView::class.java)
+            intent.putExtra("clinicId", clinicId)
+            startActivity(intent)
+        }
+
+
         binding.menuIcon.setOnClickListener {
             val drawerLayout = requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
             drawerLayout.openDrawer(GravityCompat.END)
@@ -248,6 +256,8 @@ class DermaProfileFragment : Fragment() {
                     fullName.text = dermaInfo?.name ?: ""
                     val text = (dermaInfo?.status ?: "")
                     status.text = "Status: $text"
+                    totalRatings.text = String.format("%.1f", dermaInfo?.rating ?: 0f)
+
 
                     dermaInfo?.logoImage?.let {
                         if (it.isNotEmpty()) {

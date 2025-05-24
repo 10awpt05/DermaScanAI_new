@@ -68,6 +68,13 @@ class DermaHomeFragment : Fragment() {
         val headerView = navView.getHeaderView(0)
         val closeDrawerBtn = headerView.findViewById<ImageView>(R.id.closeDrawerBtn)
 
+        binding.ratings.setOnClickListener {
+            val clinicId = mAuth.currentUser?.uid
+            val intent = Intent(requireContext(), RatingView::class.java)
+            intent.putExtra("clinicId", clinicId)
+            startActivity(intent)
+        }
+
         binding.dateTimeText.text = formatted
 
         notificationBinding = LayoutNotificationPopupBinding.inflate(layoutInflater)
@@ -114,6 +121,8 @@ class DermaHomeFragment : Fragment() {
                 }
             }
         }
+        displayTopBlogPost(binding) // ---------------------------------------------------------------------
+
 
         binding.menuIcon.setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.END)
@@ -142,7 +151,7 @@ class DermaHomeFragment : Fragment() {
         val dateText = getCurrentFormattedDate()
         binding.currentTime.text = dateText
 
-        checkApprovedBookingForToday("Derma_Clinic_Dummy", requireContext()) { isApproved ->
+            checkApprovedBookingForToday("Derma_Clinic_Dummy", requireContext()) { isApproved ->
             binding.nameAppoint.text = if (isApproved) "You have an approved booking today" else "No Approved Booking Today"
         }
         fetchUserData()
@@ -156,6 +165,7 @@ class DermaHomeFragment : Fragment() {
             if (clinics.isNotEmpty()) {
                 val featuredClinic = clinics.random()
                 binding.name.text = featuredClinic.name
+                binding.totalR.text = String.format("%.1f", featuredClinic?.rating ?: 0f)
 
                 if (!featuredClinic.logoImage.isNullOrEmpty()) {
                     val decodedBytes = Base64.decode(featuredClinic.logoImage, Base64.DEFAULT)
@@ -194,6 +204,7 @@ class DermaHomeFragment : Fragment() {
                 val clinicInfo = snapshot.getValue(ClinicInfo::class.java)
 
                 binding.fullName.setText(clinicInfo?.name ?: "")
+                binding.totalRatings.text = String.format("%.1f", clinicInfo?.rating ?: 0f)
 
                 clinicInfo?.logoImage?.let {
                     if (it.isNotEmpty()) {
@@ -261,9 +272,11 @@ class DermaHomeFragment : Fragment() {
         bookingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val found = snapshot.children.any {
-                    it.child("date").getValue(String::class.java) == todayFormatted &&
-                            it.child("status").getValue(String::class.java)?.equals("approved", true) == true
+                    val date = it.child("date").getValue(String::class.java) ?: ""
+                    val status = it.child("status").getValue(String::class.java) ?: ""
+                    date.startsWith(todayFormatted) && status.equals("confirmed", true)
                 }
+
                 callback(found)
             }
             override fun onCancelled(error: DatabaseError) {
@@ -277,4 +290,46 @@ class DermaHomeFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    fun displayTopBlogPost(binding: FragmentDermaHomeBinding) {
+        val blogPostsRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("blogPosts")
+
+        blogPostsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var topPost: BlogPost? = null
+
+                for (postSnapshot in snapshot.children) {
+                    val blogPost = postSnapshot.getValue(BlogPost::class.java)
+                    blogPost?.let {
+                        if (topPost == null ||
+                            (it.commentCount + it.likeCount) > (topPost!!.commentCount + topPost!!.likeCount)
+                        ) {
+                            topPost = it
+                        }
+                    }
+                }
+
+                topPost?.let { post ->
+                    binding.contentDiscuss.text = post.content
+                    binding.byNameTextView.text = "By: ${post.fullName}"
+
+                    binding.topDiscussion.setOnClickListener {
+                        val intent = Intent(binding.root.context, BlogView::class.java).apply {
+                            putExtra("fullName", post.fullName)
+                            putExtra("content", post.content)
+                            putExtra("id", post.postId)
+                        }
+                        binding.root.context.startActivity(intent)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(binding.root.context, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+
+
 }

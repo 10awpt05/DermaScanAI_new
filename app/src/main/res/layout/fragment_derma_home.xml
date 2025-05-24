@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
+    android:scrollbars="vertical"
     android:layout_height="match_parent"
     tools:context=".DermaHomeFragment">
 
@@ -12,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/white"
-
+        android:scrollbars="vertical"
         >
 
         <androidx.cardview.widget.CardView
@@ -111,6 +112,7 @@
         </LinearLayout>
 
 
+
         <TextView
             android:id="@+id/dateTimeText"
             android:layout_width="wrap_content"
@@ -134,6 +136,7 @@
             app:layout_constraintTop_toBottomOf="@+id/dateTimeText">
 
             <LinearLayout
+                android:id="@+id/ratings"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical">
@@ -149,6 +152,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/totalRatings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
@@ -159,127 +163,172 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-
-        <TextView
-            android:id="@+id/textView44"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="15dp"
-            android:layout_marginTop="25dp"
-            android:text="Feature Clinic"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/cardView10" />
-
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cardView11"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="15dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textView44">
+            app:layout_constraintTop_toBottomOf="@+id/cardView13">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="10dp">
+                android:orientation="vertical">
 
-                <androidx.fragment.app.FragmentContainerView
-                    android:id="@+id/popupMapFragment"
-                    android:name="com.google.android.gms.maps.SupportMapFragment"
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    app:layout_constraintEnd_toEndOf="parent"
+                <TextView
+                    android:id="@+id/textView44"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginTop="25dp"
+                    android:text="Feature Clinic"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toBottomOf="@+id/cardView10" />
 
                 <androidx.cardview.widget.CardView
-                    android:id="@+id/cardView12"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:layout_marginStart="15dp"
-                    app:cardCornerRadius="50dp"
-                    app:layout_constraintBottom_toBottomOf="@+id/popupMapFragment"
-                    app:layout_constraintStart_toStartOf="@+id/popupMapFragment"
-                    app:layout_constraintTop_toBottomOf="@+id/popupMapFragment">
+                    android:id="@+id/cardView11"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="15dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textView44">
 
-                    <ImageView
-                        android:id="@+id/profileImageView"
+                    <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/default_profile" />
+                        android:layout_height="wrap_content"
+                        android:layout_margin="10dp">
+
+                        <androidx.fragment.app.FragmentContainerView
+                            android:id="@+id/popupMapFragment"
+                            android:name="com.google.android.gms.maps.SupportMapFragment"
+                            android:layout_width="match_parent"
+                            android:layout_height="200dp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cardView12"
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:layout_marginStart="15dp"
+                            app:cardCornerRadius="50dp"
+                            app:layout_constraintBottom_toBottomOf="@+id/popupMapFragment"
+                            app:layout_constraintStart_toStartOf="@+id/popupMapFragment"
+                            app:layout_constraintTop_toBottomOf="@+id/popupMapFragment">
+
+                            <ImageView
+                                android:id="@+id/profileImageView"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/default_profile" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:id="@+id/name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="10dp"
+                            android:text="Dr, Dummy Account"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            app:layout_constraintBottom_toBottomOf="@+id/cardView12"
+                            app:layout_constraintStart_toEndOf="@+id/cardView12"
+                            app:layout_constraintTop_toBottomOf="@+id/popupMapFragment" />
+
+
+                        <ImageView
+                            android:id="@+id/star"
+                            android:layout_width="15dp"
+                            android:layout_height="15dp"
+                            android:layout_marginTop="15dp"
+                            android:layout_marginBottom="5dp"
+                            android:src="@drawable/ic_star"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/name" />
+
+                        <TextView
+                            android:id="@+id/totalR"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="5dp"
+                            android:hint="-"
+                            android:textSize="15sp"
+                            app:layout_constraintBottom_toBottomOf="@id/star"
+                            app:layout_constraintEnd_toStartOf="@id/star"
+                            app:layout_constraintTop_toTopOf="@id/star" />
+
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
                 </androidx.cardview.widget.CardView>
 
                 <TextView
-                    android:id="@+id/name"
+                    android:id="@+id/textView45"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="10dp"
-                    android:text="Dr, Dummy Account"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginTop="15dp"
+                    android:text="Top Discussion of the week"
                     android:textSize="15sp"
                     android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="@+id/cardView12"
-                    app:layout_constraintStart_toEndOf="@+id/cardView12"
-                    app:layout_constraintTop_toBottomOf="@+id/popupMapFragment" />
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/cardView11" />
 
-
-
-                <ImageView
-                    android:id="@+id/star"
-                    android:layout_width="15dp"
-                    android:layout_height="15dp"
-                    android:layout_marginBottom="5dp"
-                    android:layout_marginTop="15dp"
-                    android:src="@drawable/ic_star"
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginEnd="15dp"
+                    android:layout_marginBottom="50dp"
+                    app:cardCornerRadius="15dp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/name" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="5dp"
-                    android:hint="No Ratings yet"
-                    android:textSize="15sp"
-                    app:layout_constraintBottom_toBottomOf="@id/star"
-                    app:layout_constraintEnd_toStartOf="@id/star"
-                    app:layout_constraintTop_toTopOf="@id/star" />
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textView45">
 
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </androidx.cardview.widget.CardView>
+                    <LinearLayout
+                        android:id="@+id/topDiscussion"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
 
-        <TextView
-            android:id="@+id/textView45"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            android:text="Top Discussion of the week"
-            android:textSize="15sp"
-            android:layout_marginStart="15dp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/cardView11" />
+                        android:padding="15dp">
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            app:cardCornerRadius="15dp"
-            android:layout_marginTop="5dp"
-            android:layout_marginStart="15dp"
-            android:layout_marginEnd="15dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textView45" />
+                        <TextView
+                            android:id="@+id/byNameTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_marginTop="10dp"
+                            android:gravity="bottom"
+                            android:text="By: Name" />
+
+                        <TextView
+                            android:id="@+id/contentDiscuss"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:text="Content Here" />
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+        </ScrollView>
 
         <androidx.cardview.widget.CardView
+            android:id="@+id/cardView13"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="25dp"
-            app:cardCornerRadius="15dp"
             android:layout_marginEnd="-15dp"
+            app:cardCornerRadius="15dp"
             app:layout_constraintBottom_toBottomOf="@+id/cardView10"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/cardView10"
@@ -296,10 +345,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@color/Vivid_Violet"
+                    android:gravity="center"
                     android:padding="10dp"
                     android:paddingEnd="25dp"
                     android:text="JAN 25, (Sunday)"
-                    android:gravity="center"
                     android:textColor="@color/white"
                     android:textSize="15sp"
                     android:textStyle="bold" />
