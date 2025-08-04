@@ -25,6 +25,7 @@ import java.nio.channels.FileChannel
 import android.content.res.AssetFileDescriptor
 import android.media.ExifInterface
 import android.util.Base64
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -49,6 +50,12 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.segmentation.Segmentation
+import com.google.mlkit.vision.segmentation.selfie.SelfieSegmenterOptions
+import kotlinx.coroutines.tasks.await
+
+
 
 
 
@@ -135,7 +142,7 @@ class MainPage : AppCompatActivity() {
             finish()
         }
         val userId = firebase.currentUser?.uid ?: return
-        val roleRef = database.getReference("dermaInfo").child(userId).child("role")
+        val roleRef = database.getReference("clinicInfo").child(userId).child("role")
 
         roleRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -269,11 +276,21 @@ class MainPage : AppCompatActivity() {
             CoroutineScope(Dispatchers.Main).launch {
                 showProgress()
 
-                val result = withContext(Dispatchers.IO) {
-                    val rotatedBitmap = rotateImageIfNeeded(bitmap, imageUri)
-                    val predictionResult = predict(rotatedBitmap)
-                    predictionResult
+//                val result = withContext(Dispatchers.IO) {
+//                    val rotatedBitmap = rotateImageIfNeeded(bitmap, imageUri)
+//                    val predictionResult = predict(rotatedBitmap)
+//                    predictionResult
+//                }
+
+                val rotatedBitmap = rotateImageIfNeeded(bitmap, imageUri)
+                val predictionResult = segmentAndPredict(rotatedBitmap)
+
+                if (predictionResult == null) {
+                    Toast.makeText(this@MainPage, "No skin detected in image.", Toast.LENGTH_LONG).show()
+                    hideProgress()
+                    return@launch
                 }
+
 
 
                 binding.reportScan.setOnClickListener {
@@ -281,6 +298,7 @@ class MainPage : AppCompatActivity() {
                 }
 
                 hideProgress()
+                val result = predictionResult
                 binding.detailBtn.visibility = View.VISIBLE
                 binding.skinImageView.setImageBitmap(bitmap)
                 binding.resultTextView.text = "You might have $result"
@@ -310,8 +328,26 @@ class MainPage : AppCompatActivity() {
         }
     }
 
-
     private fun showReportDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Report Reminder")
+        builder.setMessage("Please make a screenshot and upload it as part of your report.")
+        builder.setPositiveButton("Proceed") { dialog, _ ->
+            dialog.dismiss()
+            // Proceed to your report logic here
+            openReportScreen() // Optional: call another function or activity
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.dismiss()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+
+
+    private fun openReportScreen() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Send Feedback to Admin")
 
@@ -334,7 +370,7 @@ class MainPage : AppCompatActivity() {
         }
 
         val selectImageButton = Button(this).apply {
-            text = "Select Image"
+            text = "Select Screenshot Image"
             setOnClickListener {
                 imagePickerLauncher.launch("image/*")
                 selectedImageView?.visibility = View.VISIBLE
@@ -367,7 +403,7 @@ class MainPage : AppCompatActivity() {
 
     private fun reportScan(userMessage: String, imageBase64: String?) {
         val userId = firebase.currentUser?.uid ?: return
-        val userNameRef = database.getReference("dermaInfo").child(userId).child("name")
+        val userNameRef = database.getReference("clinicInfo").child(userId).child("name")
 
         userNameRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -566,4 +602,51 @@ class MainPage : AppCompatActivity() {
     private fun hideProgress() {
         binding.loadingProgressBar.visibility = View.GONE
     }
+
+    private suspend fun segmentAndPredict(bitmap: Bitmap): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Resize the bitmap for better ML performance
+                val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 256, 256, true)
+
+                val inputImage = InputImage.fromBitmap(resizedBitmap, 0)
+
+                val options = SelfieSegmenterOptions.Builder()
+                    .setDetectorMode(SelfieSegmenterOptions.SINGLE_IMAGE_MODE)
+                    .enableRawSizeMask()
+                    .build()
+
+                val segmenter = Segmentation.getClient(options)
+                val result = segmenter.process(inputImage).await()
+
+                val mask = result.buffer
+                val width = result.width
+                val height = result.height
+
+                val maskArray = FloatArray(width * height)
+                mask.rewind()
+                mask.asFloatBuffer().get(maskArray)
+
+                val skinPixels = maskArray.count { it > 0.5f }
+                val skinRatio = skinPixels.toFloat() / maskArray.size
+
+                Log.d("SegmentationDebug", "Skin Ratio: $skinRatio, Pixels: $skinPixels")
+                Log.d("SegmentationDebug", "Mask sample: ${maskArray.take(20)}")
+
+                if (skinRatio < 0.05f) {
+                    return@withContext null
+                }
+
+                return@withContext predict(resizedBitmap)
+
+            } catch (e: Exception) {
+                Log.e("SegmentationError", "Error in segmentAndPredict", e)
+                return@withContext null
+            }
+        }
+    }
+
+
 }
+
+

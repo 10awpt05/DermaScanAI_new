@@ -113,6 +113,8 @@ class ConfirmBooking : AppCompatActivity() {
             // Check if user already has a booking before proceeding
             checkExistingBooking()
         }
+
+
     }
 
     private fun fetchUserData(clinicNameParam: String) {

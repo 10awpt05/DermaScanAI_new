@@ -15,27 +15,29 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@drawable/toolbar_gradient_bg"
         android:elevation="4dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton
+        <ImageView
             android:id="@+id/backBTN"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:padding="12dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/back"
-            android:src="@drawable/badge_green"
+            android:padding="12dp"
+            android:src="@drawable/back_arrow"
             app:tint="@color/white" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.05"
             android:text="Book Appointment"
             android:textColor="@color/white"
-            android:textSize="20sp"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.05" />
+            android:textSize="20sp" />
     </androidx.appcompat.widget.Toolbar>
 
     <!-- Main content in a card with rounded corners -->
@@ -80,7 +82,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="Select Date"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/main_green"
                         android:textSize="18sp"
                         android:fontFamily="sans-serif-medium" />
                 </LinearLayout>
@@ -107,7 +109,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@android:color/white"
-                        android:selectedDateVerticalBar="@color/colorAccent"
+                        android:selectedDateVerticalBar="@color/main_green"
                         android:weekDayTextAppearance="@style/CalendarDayStyle"
                         android:dateTextAppearance="@style/CalendarDateStyle" />
                 </androidx.cardview.widget.CardView>
@@ -139,7 +141,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:text="Available bookings: 3/3"
-                            android:textColor="#1976D2"
+                            android:textColor="@color/main_green"
                             android:textSize="14sp"
                             android:fontFamily="sans-serif" />
                     </LinearLayout>
@@ -163,7 +165,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="Select Service"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/main_green"
                         android:textSize="18sp"
                         android:fontFamily="sans-serif-medium" />
                 </LinearLayout>

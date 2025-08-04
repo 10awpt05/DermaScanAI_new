@@ -7,10 +7,20 @@
     android:layout_height="wrap_content">
 
     <TextView
+        android:id="@+id/attachmentTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📎 Open File"
+        android:textColor="@color/blue"
+        android:visibility="gone"
+        android:paddingTop="4dp"/>
+
+
+    <TextView
         android:id="@+id/message_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_rounded"
+        android:background="@drawable/bg_message_receiver"
         android:textColor="@android:color/black"
         android:padding="10dp"
         android:textSize="16sp" />

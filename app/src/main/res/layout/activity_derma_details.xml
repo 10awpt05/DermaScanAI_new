@@ -493,6 +493,24 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
+        <Button
+            android:id="@+id/messageMe"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="15dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:text="Message Me"
+            android:textAllCaps="false"
+            android:backgroundTint="?attr/colorPrimary"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            app:layout_constraintTop_toBottomOf="@+id/dermatologistsCard"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
 
         <Button
             android:id="@+id/appointmentBtn"
@@ -507,7 +525,7 @@
             android:backgroundTint="?attr/colorPrimary"
             android:textColor="@android:color/white"
             android:textSize="16sp"
-            app:layout_constraintTop_toBottomOf="@+id/dermatologistsCard"
+            app:layout_constraintTop_toBottomOf="@+id/messageMe"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>

@@ -31,6 +31,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 
 class UserHomeFragment : Fragment() {
@@ -40,17 +41,17 @@ class UserHomeFragment : Fragment() {
     private lateinit var mDatabase: DatabaseReference
     private lateinit var mAuth: FirebaseAuth
 
-    private lateinit var notificationBinding: LayoutNotificationPopupBinding
-    private lateinit var notificationAdapter: NotificationAdapter
-    private val notificationList = mutableListOf<Notification>()
+//    private lateinit var notificationBinding: LayoutNotificationPopupBinding
+//    private lateinit var notificationAdapter: NotificationAdapter
+//    private val notificationList = mutableListOf<Notification>()
 
     // Store event listeners so we can remove them in onDestroyView
     private var clinicEventListener: ValueEventListener? = null
     private var tipEventListener: ValueEventListener? = null
     private var notificationEventListener: ValueEventListener? = null
 
-    private val notificationRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
-        .getReference("notifications")
+//    private val notificationRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+//        .getReference("notifications")
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -80,9 +81,9 @@ class UserHomeFragment : Fragment() {
         val closeDrawerBtn = headerBinding.closeDrawerBtn
 
 
-        headerBinding.closeDrawerBtn.setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.END)
-        }
+//        headerBinding.closeDrawerBtn.setOnClickListener {
+//            drawerLayout.closeDrawer(GravityCompat.END)
+//        }
 
         displayTopBlogPost(binding)
 
@@ -90,142 +91,192 @@ class UserHomeFragment : Fragment() {
         binding.dateTimeText.text = formatted
 
         val userId = mAuth.currentUser?.uid
+        getUserData(userId.toString())
 
-        notificationBinding = LayoutNotificationPopupBinding.inflate(layoutInflater)
-        val popupWindow = PopupWindow(
-            notificationBinding.root,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            true
-        )
+//        notificationBinding = LayoutNotificationPopupBinding.inflate(layoutInflater)
+//        val popupWindow = PopupWindow(
+//            notificationBinding.root,
+//            ViewGroup.LayoutParams.WRAP_CONTENT,
+//            ViewGroup.LayoutParams.WRAP_CONTENT,
+//            true
+//        )
 
-        val gridLayoutManager = GridLayoutManager(requireContext(), 2)
-        binding.dermaRecycleView.layoutManager = gridLayoutManager
+//        val gridLayoutManager = GridLayoutManager(requireContext(), 2)
+//        binding.dermaRecycleView.layoutManager = gridLayoutManager
 //        binding.dermaRecycleView.adapter = AdapterDoctorList(clinicList)
         binding.dermaRecycleView.setHasFixedSize(true)
 
-        val notifRecyclerView = notificationBinding.notificationRecyclerView
-        notifRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        notificationAdapter = NotificationAdapter(requireContext(), notificationList)
-        notifRecyclerView.adapter = notificationAdapter
+//        val notifRecyclerView = notificationBinding.notificationRecyclerView
+//        notifRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+//
+//        notificationAdapter = NotificationAdapter(requireContext(), notificationList)
+//        notifRecyclerView.adapter = notificationAdapter
+//
+//        if (userId != null) {
+//            notificationEventListener = object : ValueEventListener {
+//                override fun onDataChange(snapshot: DataSnapshot) {
+//                    if (_binding == null) return // Check if view is still valid
+//
+//                    notificationList.clear()
+//                    var hasUnread = false
+//                    for (notifSnapshot in snapshot.children) {
+//                        val notif = notifSnapshot.getValue(Notification::class.java)
+//                        notif?.let {
+//                            notificationList.add(it)
+//                            if (!it.isRead) {
+//                                hasUnread = true
+//                            }
+//                        }
+//                    }
+//
+//                    notificationList.sortByDescending { it.timestamp }
+//
+//                    notificationAdapter.notifyDataSetChanged()
+//
+////                    binding.notificationDot.visibility = if (hasUnread) View.VISIBLE else View.GONE
+//                }
+//
+//                override fun onCancelled(error: DatabaseError) {
+//                    if (isAdded && context != null) { // Check if fragment is still attached
+//                        Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+//                    }
+//                }
+//            }
+//
+//            notificationRef.child(userId).addValueEventListener(notificationEventListener!!)
+//
+//            getUserData(userId)
+//        } else {
+//            if (isAdded && context != null) {
+//                Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+//            }
+//        }
 
-        if (userId != null) {
-            notificationEventListener = object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (_binding == null) return // Check if view is still valid
-
-                    notificationList.clear()
-                    var hasUnread = false
-                    for (notifSnapshot in snapshot.children) {
-                        val notif = notifSnapshot.getValue(Notification::class.java)
-                        notif?.let {
-                            notificationList.add(it)
-                            if (!it.isRead) {
-                                hasUnread = true
-                            }
-                        }
-                    }
-
-                    notificationList.sortByDescending { it.timestamp }
-
-                    notificationAdapter.notifyDataSetChanged()
-
-                    binding.notificationDot.visibility = if (hasUnread) View.VISIBLE else View.GONE
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    if (isAdded && context != null) { // Check if fragment is still attached
-                        Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-
-            notificationRef.child(userId).addValueEventListener(notificationEventListener!!)
-
-            getUserData(userId)
-        } else {
-            if (isAdded && context != null) {
-                Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        binding.notificationIcon.setOnClickListener {
-            popupWindow.showAsDropDown(binding.notificationIcon, -100, 20)
-            binding.notificationDot.visibility = View.GONE
-
-            if (userId != null) {
-                notificationRef.child(userId).get().addOnSuccessListener { snapshot ->
-                    for (notifSnapshot in snapshot.children) {
-                        notifSnapshot.ref.child("isRead").setValue(true)
-                    }
-                }
-            }
-        }
+//        binding.notificationIcon.setOnClickListener {
+//            popupWindow.showAsDropDown(binding.notificationIcon, -100, 20)
+//            binding.notificationDot.visibility = View.GONE
+//
+//            if (userId != null) {
+//                notificationRef.child(userId).get().addOnSuccessListener { snapshot ->
+//                    for (notifSnapshot in snapshot.children) {
+//                        notifSnapshot.ref.child("isRead").setValue(true)
+//                    }
+//                }
+//            }
+//        }
 
         binding.dermaList.setOnClickListener {
             val intent = Intent(requireContext(), DoctorLists::class.java)
             startActivity(intent)
         }
 
-        binding.menuIcon.setOnClickListener {
-            val drawerLayout = requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
-            drawerLayout.openDrawer(GravityCompat.END)
-        }
+        binding.dermaRecycleView.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
 
-        closeDrawerBtn.setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.END)
-        }
 
-        navView.setNavigationItemSelectedListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.settings -> {
-                    Toast.makeText(context, "Settings Clicked", Toast.LENGTH_SHORT).show()
-                }
-                R.id.nav_terms -> {
-                    val intent = Intent(requireContext(), TermsConditions::class.java)
-                    startActivity(intent)
-                }
-                R.id.privacy -> {
-                    val intent = Intent(requireContext(), PrivacyPolicy::class.java)
-                    startActivity(intent)
-                }
-                R.id.nav_logout -> {
-                    logoutUser()
-                }
-            }
-            drawerLayout.closeDrawers()
-            true
-        }
+
+//        binding.menuIcon.setOnClickListener {
+//            val drawerLayout = requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
+//            drawerLayout.openDrawer(GravityCompat.END)
+//        }
+
+//        closeDrawerBtn.setOnClickListener {
+//            drawerLayout.closeDrawer(GravityCompat.END)
+//        }
+//
+//        navView.setNavigationItemSelectedListener { menuItem ->
+//            when (menuItem.itemId) {
+//                R.id.settings -> {
+//                    Toast.makeText(context, "Settings Clicked", Toast.LENGTH_SHORT).show()
+//                }
+//                R.id.nav_terms -> {
+//                    val intent = Intent(requireContext(), TermsConditions::class.java)
+//                    startActivity(intent)
+//                }
+//                R.id.privacy -> {
+//                    val intent = Intent(requireContext(), PrivacyPolicy::class.java)
+//                    startActivity(intent)
+//                }
+//                R.id.nav_logout -> {
+//                    logoutUser()
+//                }
+//            }
+//            drawerLayout.closeDrawers()
+//            true
+//        }
+        val cardView = binding.cardView3
+
+// Pick consistent color based on current day
+        val dayOfYear = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        val colors = listOf(
+            R.drawable.gradient_red,
+            R.drawable.gradient_green,
+            R.drawable.gradient_black
+        )
+        val selectedGradient = colors[dayOfYear % colors.size]
+
+// Set gradient as background
+        cardView.setBackgroundResource(selectedGradient)
+
+
+        val gradientLayout = binding.cardGradientBackground
+        gradientLayout.setBackgroundResource(selectedGradient)
 
         val tipRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
             .getReference("dailyTips")
 
-        val tipId = ((System.currentTimeMillis() / (1000 * 60 * 60 * 24)) % 20 + 1).toInt()
-
         tipEventListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                if (_binding == null) return // Check if view is still valid
+                if (_binding == null) return
 
-                val tip = snapshot.getValue(String::class.java)
-                if (tip != null) {
-                    binding.dailyTips.text = tip
+                val tipsList = mutableListOf<DataSnapshot>()
+
+                for (tipSnapshot in snapshot.children) {
+                    tipsList.add(tipSnapshot)
+                }
+
+                if (tipsList.isNotEmpty()) {
+                    val randomTip = tipsList.random()
+
+                    val tipText = randomTip.child("text").getValue(String::class.java)
+                    val imageBase64 = randomTip.child("image_base64").getValue(String::class.java)
+
+                    binding.dailyTips.text = tipText ?: "Stay tuned for more skin care tips!"
+
+                    if (!imageBase64.isNullOrEmpty()) {
+                        try {
+                            val decodedBytes = Base64.decode(imageBase64, Base64.DEFAULT)
+                            val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                            binding.dailyImage.setImageBitmap(bitmap)
+                            binding.dailyImage.visibility = View.VISIBLE
+                        } catch (e: Exception) {
+                            Log.e("DailyTips", "Image decode failed: ${e.message}")
+                            binding.dailyImage.visibility = View.GONE
+                        }
+                    } else {
+                        binding.dailyImage.visibility = View.GONE
+                    }
                 } else {
-                    binding.dailyTips.text = "Stay tuned for more skin care tips!"
+                    binding.dailyTips.text = "No tips available right now!"
+                    binding.dailyImage.visibility = View.GONE
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                if (_binding == null) return // Check if view is still valid
+                if (_binding == null) return
 
                 binding.dailyTips.text = "Failed to load tip."
+                binding.dailyImage.visibility = View.GONE
                 Log.e("DailyTips", "Error: ${error.message}")
             }
         }
 
-        tipRef.child(tipId.toString()).addListenerForSingleValueEvent(tipEventListener!!)
+        tipRef.addListenerForSingleValueEvent(tipEventListener!!)
 
-        binding.dermaRecycleView.layoutManager = LinearLayoutManager(context)
+
+//
+//        binding.dermaRecycleView.layoutManager = LinearLayoutManager(context)
 
         // More robust error handling for the database query
         clinicEventListener = object : ValueEventListener {
@@ -238,7 +289,7 @@ class UserHomeFragment : Fragment() {
                 if (!snapshot.exists()) {
                     Log.e("Database", "No data found at clinicInfo path")
                     if (isAdded && context != null) {
-                        Toast.makeText(requireContext(), "No clinic data available", Toast.LENGTH_SHORT).show()
+//                        Toast.makeText(requireContext(), "No clinic data available", Toast.LENGTH_SHORT).show()
                     }
                     return
                 }
@@ -259,7 +310,7 @@ class UserHomeFragment : Fragment() {
                 }
 
                 if (clinicList.isEmpty() && isAdded && context != null) {
-                    Toast.makeText(requireContext(), "No derma clinics found", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(requireContext(), "No derma clinics found", Toast.LENGTH_SHORT).show()
                 }
 
                 binding.dermaRecycleView.adapter = AdapterDermaHomeList(clinicList)
@@ -268,7 +319,7 @@ class UserHomeFragment : Fragment() {
             override fun onCancelled(error: DatabaseError) {
                 Log.e("Database", "Database error: ${error.message}")
                 if (isAdded && context != null) {
-                    Toast.makeText(requireContext(), "Failed to load clinics: ${error.message}", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(requireContext(), "Failed to load clinics: ${error.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -291,9 +342,9 @@ class UserHomeFragment : Fragment() {
         }
 
         val userId = mAuth.currentUser?.uid
-        if (userId != null && notificationEventListener != null) {
-            notificationRef.child(userId).removeEventListener(notificationEventListener!!)
-        }
+//        if (userId != null && notificationEventListener != null) {
+//            notificationRef.child(userId).removeEventListener(notificationEventListener!!)
+//        }
 
         // Clear the binding
         _binding = null
@@ -332,12 +383,12 @@ class UserHomeFragment : Fragment() {
                     }
                 } else {
                     if (isAdded && context != null) {
-                        Toast.makeText(context, "User data not found", Toast.LENGTH_SHORT).show()
+//                        Toast.makeText(context, "User data not found", Toast.LENGTH_SHORT).show()
                     }
                 }
             } else {
                 if (isAdded && context != null) {
-                    Toast.makeText(context, "User not found in database", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(context, "User not found in database", Toast.LENGTH_SHORT).show()
                 }
             }
         }.addOnFailureListener { e ->
@@ -348,28 +399,28 @@ class UserHomeFragment : Fragment() {
         }
     }
 
-    private fun logoutUser() {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Logout")
-        builder.setMessage("Are you sure you want to logout?")
-
-        builder.setPositiveButton("Yes") { dialog, _ ->
-            FirebaseAuth.getInstance().signOut()
-            Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
-
-            val intent = Intent(requireActivity(), Login::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            dialog.dismiss()
-        }
-
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.dismiss()
-        }
-
-        val dialog = builder.create()
-        dialog.show()
-    }
+//    private fun logoutUser() {
+//        val builder = AlertDialog.Builder(requireContext())
+//        builder.setTitle("Logout")
+//        builder.setMessage("Are you sure you want to logout?")
+//
+//        builder.setPositiveButton("Yes") { dialog, _ ->
+//            FirebaseAuth.getInstance().signOut()
+//            Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
+//
+//            val intent = Intent(requireActivity(), Login::class.java)
+//            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+//            startActivity(intent)
+//            dialog.dismiss()
+//        }
+//
+//        builder.setNegativeButton("Cancel") { dialog, _ ->
+//            dialog.dismiss()
+//        }
+//
+//        val dialog = builder.create()
+//        dialog.show()
+//    }
 
     fun displayTopBlogPost(binding: FragmentHomeUserBinding) {
         val blogPostsRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("blogPosts")

@@ -1,7 +1,13 @@
 package com.example.dermascanai
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.widget.ArrayAdapter
+import android.widget.ListView
+import android.widget.PopupWindow
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.dermascanai.databinding.ActivityMessageMeBinding
@@ -12,6 +18,7 @@ class MessageMe : AppCompatActivity() {
 
     private lateinit var binding: ActivityMessageMeBinding
     private lateinit var database: DatabaseReference
+    private lateinit var databaseScan: DatabaseReference
     private lateinit var messageAdapter: MessageAdapter
     private val messageList = ArrayList<Message>()
     private var receiverId: String? = null
@@ -21,15 +28,21 @@ class MessageMe : AppCompatActivity() {
         binding = ActivityMessageMeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Initialize Firebase Database
         database = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
             .reference.child("messages")
 
-        // Get receiver ID from intent
+        databaseScan = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("scanResults")
+
         receiverId = intent.getStringExtra("receiverId")
+
+
 
         binding.backBTN.setOnClickListener {
             finish()
+        }
+
+        binding.attachFile.setOnClickListener {
+            showScanPopup()
         }
 
         setupRecyclerView()
@@ -40,12 +53,116 @@ class MessageMe : AppCompatActivity() {
             if (messageText.isNotEmpty()) {
                 sendMessage(messageText)
                 binding.messageText.setText("")
+
             }
         }
+
+    }
+
+    private fun showScanPopup() {
+        val popupView = layoutInflater.inflate(R.layout.popup_scan_list, null)
+        val listView = popupView.findViewById<ListView>(R.id.scanListView)
+        val popupWindow = PopupWindow(popupView, 600, 800, true)
+        popupWindow.elevation = 10f
+        popupWindow.showAsDropDown(binding.attachFile)
+
+        val scanList = mutableListOf<String>()
+        val scanMap = mutableMapOf<String, String>()
+
+//        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+//        databaseScan.child(userId).addListenerForSingleValueEvent
+
+
+        //--------------------TRIAL--------------------
+
+
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val databaseScan = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("scanResults/$currentUserId")
+
+        databaseScan.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                scanList.clear()
+                scanMap.clear()
+
+                for (scanSnapshot in snapshot.children) {
+                    val timestamp = scanSnapshot.key ?: continue
+                    val fullPath = "$currentUserId/$timestamp"
+                    scanList.add(timestamp)
+                    scanMap[timestamp] = timestamp
+                }
+
+                val adapter = ArrayAdapter(this@MessageMe, android.R.layout.simple_list_item_1, scanList)
+                listView.adapter = adapter
+
+                listView.setOnItemClickListener { _, _, position, _ ->
+                    val selectedTimestamp = scanList[position]
+                    val selectedPath = scanMap[selectedTimestamp]
+                    popupWindow.dismiss()
+
+                    AlertDialog.Builder(this@MessageMe)
+                        .setTitle("Send Scan Result")
+                        .setMessage("Are you sure you want to send the File?\n\nSelected: $selectedTimestamp")
+                        .setPositiveButton("Yes") { dialog, _ ->
+                            sendMessage("Scan result sent", selectedPath)
+                            Toast.makeText(this@MessageMe, "Scan file sent!", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                        }
+                        .setNegativeButton("Cancel") { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                        .show()
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@MessageMe, "Failed to load scans", Toast.LENGTH_SHORT).show()
+            }
+        })
+
+
+//        databaseScan.addListenerForSingleValueEvent(object : ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                for (userSnapshot in snapshot.children) {
+//                    val userId = userSnapshot.key ?: continue
+//                    for (scanSnapshot in userSnapshot.children) {
+//                        val timestamp = scanSnapshot.key ?: continue
+//                        val fullPath = "$userId/$timestamp"
+//                        scanList.add(timestamp)
+//                        scanMap[timestamp] = fullPath
+//                    }
+//                }
+//
+//                val adapter = ArrayAdapter(this@MessageMe, android.R.layout.simple_list_item_1, scanList)
+//                listView.adapter = adapter
+//
+//                listView.setOnItemClickListener { _, _, position, _ ->
+//                    val selectedTimestamp = scanList[position]
+//                    val selectedPath = scanMap[selectedTimestamp]
+//                    popupWindow.dismiss()
+//
+//                    AlertDialog.Builder(this@MessageMe)
+//                        .setTitle("Send Scan Result")
+//                        .setMessage("Are you sure you want to send the File?\n\nSelected: $selectedTimestamp")
+//                        .setPositiveButton("Yes") { dialog, _ ->
+//                            sendMessage("Scan result sent", selectedPath)
+//                            Toast.makeText(this@MessageMe, "Scan file sent!", Toast.LENGTH_SHORT).show()
+//                            dialog.dismiss()
+//                        }
+//                        .setNegativeButton("Cancel") { dialog, _ ->
+//                            dialog.dismiss()
+//                        }
+//                        .show()
+//                }
+//            }
+//
+//            override fun onCancelled(error: DatabaseError) {
+//                Toast.makeText(this@MessageMe, "Failed to load scans", Toast.LENGTH_SHORT).show()
+//            }
+//        })
     }
 
     private fun setupRecyclerView() {
-        messageAdapter = MessageAdapter(messageList)
+        messageAdapter = MessageAdapter(this, messageList)
         binding.recycleView.layoutManager = LinearLayoutManager(this)
         binding.recycleView.adapter = messageAdapter
     }
@@ -57,10 +174,8 @@ class MessageMe : AppCompatActivity() {
                 for (messageSnap in snapshot.children) {
                     val message = messageSnap.getValue(Message::class.java)
                     if (message != null) {
-                        // Only show messages between these two users
                         if ((message.senderId == FirebaseAuth.getInstance().currentUser?.uid && message.receiverId == receiverId) ||
-                            (message.receiverId == FirebaseAuth.getInstance().currentUser?.uid && message.senderId == receiverId)
-                        ) {
+                            (message.receiverId == FirebaseAuth.getInstance().currentUser?.uid && message.senderId == receiverId)) {
                             messageList.add(message)
                         }
                     }
@@ -75,16 +190,15 @@ class MessageMe : AppCompatActivity() {
         })
     }
 
-    private fun sendMessage(text: String) {
+    private fun sendMessage(text: String, filePath: String? = null) {
         val senderId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val receiverId = this.receiverId ?: return
         val messageId = database.push().key ?: return
         val timestamp = System.currentTimeMillis()
 
-        val message = Message(messageId, senderId, receiverId, text, timestamp)
+        val message = Message(messageId, senderId, receiverId, text, timestamp, filePath)
         database.child(messageId).setValue(message)
 
-        // Save chat relationship
         val chatRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
             .reference.child("userChats")
         chatRef.child(senderId).child(receiverId).setValue(true)
@@ -96,15 +210,13 @@ class MessageMe : AppCompatActivity() {
     private fun saveNotification(fromUserId: String, toUserId: String) {
         val dbRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/").reference
 
-        // Try userInfo first
         dbRef.child("userInfo").child(fromUserId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(userSnapshot: DataSnapshot) {
                 if (userSnapshot.exists()) {
                     val fullName = userSnapshot.child("name").getValue(String::class.java) ?: "Someone"
                     pushNotification(fullName, fromUserId, toUserId)
                 } else {
-                    // If not a user, check dermaInfo
-                    dbRef.child("dermaInfo").child(fromUserId).addListenerForSingleValueEvent(object : ValueEventListener {
+                    dbRef.child("clinicInfo").child(fromUserId).addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dermaSnapshot: DataSnapshot) {
                             val fullName = dermaSnapshot.child("name").getValue(String::class.java) ?: "Someone"
                             pushNotification(fullName, fromUserId, toUserId)

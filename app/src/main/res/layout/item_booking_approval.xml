@@ -216,7 +216,7 @@
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="10dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
                 app:cardBackgroundColor="@color/noteBackground">
@@ -258,8 +258,14 @@
                             android:fontFamily="sans-serif"
                             tools:text="Patient notes and additional information about the appointment. May include special instructions or requirements." />
                     </LinearLayout>
+
+
+
                 </LinearLayout>
+
+
             </androidx.cardview.widget.CardView>
+
 
             <!-- Decline Reason (only visible if declined) -->
             <androidx.cardview.widget.CardView

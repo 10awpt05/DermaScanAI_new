@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.Html
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
@@ -70,6 +71,15 @@ class DermaRegister : AppCompatActivity() {
         }
 
         binding.backBTN.setOnClickListener { finish() }
+
+
+        binding.namelayout.hint = Html.fromHtml("Full Name <font color='#FF0000'>*</font>", Html.FROM_HTML_MODE_LEGACY)
+        binding.emailLayout.hint = Html.fromHtml("Email <font color='#FF0000'>*</font>", Html.FROM_HTML_MODE_LEGACY)
+        binding.phoneLayout.hint = Html.fromHtml("Phone Number <font color='#FF0000'>*</font>", Html.FROM_HTML_MODE_LEGACY)
+        binding.passwordLayout.hint = Html.fromHtml("Password <font color='#FF0000'>*</font>", Html.FROM_HTML_MODE_LEGACY)
+        binding.confirmLayout.hint = Html.fromHtml("Confirm Password <font color='#FF0000'>*</font>", Html.FROM_HTML_MODE_LEGACY)
+
+
     }
 
     private fun setupClinicOpeningSpinners() {

@@ -38,26 +38,92 @@ class ChatUserListActivity : AppCompatActivity() {
 //        loadDermasWhoMessagedUser()
     }
 
+//    private fun loadChatUsers() {
+//        val userChatsRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+//            .getReference("userChats")
+//            .child(dermaId)
+//
+//        userChatsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                userList.clear()
+//                for (child in snapshot.children) {
+//                    val userId = child.key ?: continue
+//                    val userInfoRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+//                        .getReference("userInfo").child(userId)
+//
+//                    userInfoRef.addListenerForSingleValueEvent(object : ValueEventListener {
+//                        override fun onDataChange(data: DataSnapshot) {
+//                            val user = data.getValue(UserInfo::class.java)
+//                            if (user != null) {
+//                                user.uid = userId
+//                                userList.add(user)
+//                                adapter.notifyDataSetChanged()
+//                            }
+//                        }
+//
+//                        override fun onCancelled(error: DatabaseError) {}
+//                    })
+//                }
+//            }
+//
+//            override fun onCancelled(error: DatabaseError) {}
+//        })
+//    }
+
     private fun loadChatUsers() {
-        val userChatsRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
-            .getReference("userChats")
-            .child(dermaId)
+        val database = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+        val userChatsRef = database.getReference("userChats")
 
         userChatsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 userList.clear()
-                for (child in snapshot.children) {
-                    val userId = child.key ?: continue
-                    val userInfoRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
-                        .getReference("userInfo").child(userId)
+                val uniqueUserIds = mutableSetOf<String>()
 
+                for (chatSnapshot in snapshot.children) {
+                    val senderId = chatSnapshot.key ?: continue
+
+                    for (receiverSnapshot in chatSnapshot.children) {
+                        val receiverId = receiverSnapshot.key ?: continue
+
+                        // If current user is sender, add receiver
+                        if (senderId == dermaId && receiverId != dermaId) {
+                            uniqueUserIds.add(receiverId)
+                        }
+
+                        // If current user is receiver, add sender
+                        if (receiverId == dermaId && senderId != dermaId) {
+                            uniqueUserIds.add(senderId)
+                        }
+                    }
+                }
+
+                for (userId in uniqueUserIds) {
+                    // First try to fetch from userInfo
+                    val userInfoRef = database.getReference("userInfo").child(userId)
                     userInfoRef.addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(data: DataSnapshot) {
-                            val user = data.getValue(UserInfo::class.java)
-                            if (user != null) {
-                                user.uid = userId
-                                userList.add(user)
-                                adapter.notifyDataSetChanged()
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            if (snapshot.exists()) {
+                                val user = snapshot.getValue(UserInfo::class.java)
+                                if (user != null) {
+                                    user.uid = userId
+                                    userList.add(user)
+                                    adapter.notifyDataSetChanged()
+                                }
+                            } else {
+                                // If not found in userInfo, try clinicInfo
+                                val clinicInfoRef = database.getReference("clinicInfo").child(userId)
+                                clinicInfoRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                                    override fun onDataChange(snapshot: DataSnapshot) {
+                                        val clinic = snapshot.getValue(UserInfo::class.java)
+                                        if (clinic != null) {
+                                            clinic.uid = userId
+                                            userList.add(clinic)
+                                            adapter.notifyDataSetChanged()
+                                        }
+                                    }
+
+                                    override fun onCancelled(error: DatabaseError) {}
+                                })
                             }
                         }
 
@@ -69,6 +135,8 @@ class ChatUserListActivity : AppCompatActivity() {
             override fun onCancelled(error: DatabaseError) {}
         })
     }
+
+
 
 
     private fun loadDermasWhoMessagedUser() {
@@ -94,7 +162,7 @@ class ChatUserListActivity : AppCompatActivity() {
 
                 for (senderId in senderIds) {
                     val userInfoRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
-                        .getReference("userInfo")
+                        .getReference("clinicInfo")
                         .child(senderId)
 
                     userInfoRef.addListenerForSingleValueEvent(object : ValueEventListener {

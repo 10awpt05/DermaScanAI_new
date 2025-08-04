@@ -13,6 +13,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.dermascanai.databinding.ActivityBookingBinding
 import com.google.firebase.database.*
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 
@@ -132,7 +135,7 @@ class Booking : AppCompatActivity() {
 
                     val dateStr = dateFormat.format(Date(dateMillis))
 
-                    if ((status == "Pending" || status == "Confirmed") && clinic == clinicName) {
+                    if ((status == "pending" || status == "confirmed") && clinic == clinicName) {
                         bookingsByDate[dateStr] = (bookingsByDate[dateStr] ?: 0) + 1
                     }
                 }
@@ -282,11 +285,11 @@ class Booking : AppCompatActivity() {
                     selectedService?.setBackgroundColor(Color.parseColor("#7A7A7A"))
 
                     // Set new selection
-                    button.setBackgroundColor(Color.parseColor("#FFBB86FC"))
+                    button.setBackgroundColor(Color.parseColor("#06923E"))
                     selectedService = button
                     selectedServiceText = button.text.toString()
 
-                    Toast.makeText(this, "Selected: $selectedServiceText", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(this, "Selected: $selectedServiceText", Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -339,7 +342,7 @@ class Booking : AppCompatActivity() {
         // Format and show selected date
         val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
         val formattedDate = dateFormat.format(Date(selectedDate))
-        Toast.makeText(this, "Selected date: $formattedDate", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(this, "Selected date: $formattedDate", Toast.LENGTH_SHORT).show()
     }
 
     private fun proceedWithBooking() {
@@ -367,7 +370,7 @@ class Booking : AppCompatActivity() {
 
                     for (bookingSnapshot in snapshot.children) {
                         val status = bookingSnapshot.child("status").getValue(String::class.java)
-                        if (status == "Pending" || status == "Confirmed") {
+                        if (status == "pending" || status == "confirmed") {
                             hasActiveBooking = true
                             bookingStatus = status
                             break
@@ -404,7 +407,7 @@ class Booking : AppCompatActivity() {
 private fun resetServiceSelection() {
         for (btn in serviceButtons) {
             btn.isEnabled = true
-            btn.setBackgroundColor(Color.parseColor("#7A7A7A"))
+            btn.setBackgroundColor(Color.parseColor("#06923E"))
             btn.setTextColor(Color.WHITE)
         }
 
@@ -413,7 +416,14 @@ private fun resetServiceSelection() {
     }
 
     private fun checkAvailableBookingsForDate(selectedDateMillis: Long) {
-        bookingsRef.orderByChild("date").equalTo(selectedDateMillis.toDouble())
+        // Convert millis to "Jul 08, 2025"
+        val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH)
+        val selectedDateStr = Instant.ofEpochMilli(selectedDateMillis)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+            .format(formatter)
+
+        bookingsRef.orderByChild("date").equalTo(selectedDateStr)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     var bookingsCount = 0
@@ -422,7 +432,7 @@ private fun resetServiceSelection() {
                         val status = bookingSnapshot.child("status").getValue(String::class.java)
                         val clinic = bookingSnapshot.child("clinicName").getValue(String::class.java)
 
-                        if ((status == "Pending" || status == "Confirmed") && clinic == clinicName) {
+                        if ((status == "pending" || status == "confirmed") && clinic == clinicName) {
                             bookingsCount++
                         }
                     }
@@ -430,7 +440,6 @@ private fun resetServiceSelection() {
                     val remainingSlots = MAX_BOOKINGS_PER_DAY - bookingsCount
                     binding.bookingsAvailableText.text = "$remainingSlots slots available for this date"
 
-                    // Disable service buttons if no slots
                     if (remainingSlots <= 0) {
                         disableAllServiceButtons()
                     } else {
@@ -443,6 +452,7 @@ private fun resetServiceSelection() {
                 }
             })
     }
+
 
 
     private fun disableAllServiceButtons() {

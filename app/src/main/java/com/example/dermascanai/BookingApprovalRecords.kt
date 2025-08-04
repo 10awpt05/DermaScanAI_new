@@ -46,50 +46,73 @@ class BookingApprovalRecords : AppCompatActivity() {
             finish()
         }
 
-        binding.pendingFilterChip.setOnClickListener {
-            binding.pendingFilterChip.isChecked = true
-            binding.allFilterChip.isChecked = false
-            binding.approvedFilterChip.isChecked = false
-            binding.declinedFilterChip.isChecked = false
-            binding.cancelledFilterChip.isChecked = false
-            loadPendingAppointments()
+
+        val chipStatusMap = mapOf(
+            binding.pendingFilterChip to "pending",
+            binding.approvedFilterChip to "confirmed",
+            binding.declinedFilterChip to "declined",
+            binding.cancelledFilterChip to "cancelled",
+            binding.allFilterChip to null
+        )
+
+        chipStatusMap.forEach { (chip, status) ->
+            chip.setOnClickListener {
+                chipStatusMap.keys.forEach { it.isChecked = false }
+                chip.isChecked = true
+                loadAppointments(status)
+            }
         }
 
-        binding.approvedFilterChip.setOnClickListener {
-            binding.approvedFilterChip.isChecked = true
-            binding.allFilterChip.isChecked = false
-            binding.pendingFilterChip.isChecked = false
-            binding.declinedFilterChip.isChecked = false
-            binding.cancelledFilterChip.isChecked = false
-            loadApprovedAppointments()
-        }
 
-        binding.declinedFilterChip.setOnClickListener {
-            binding.declinedFilterChip.isChecked = true
-            binding.allFilterChip.isChecked = false
-            binding.pendingFilterChip.isChecked = false
-            binding.approvedFilterChip.isChecked = false
-            binding.cancelledFilterChip.isChecked = false
-            loadDeclineAppointments()
-        }
 
-        binding.cancelledFilterChip.setOnClickListener {
-            binding.cancelledFilterChip.isChecked = true
-            binding.allFilterChip.isChecked = false
-            binding.pendingFilterChip.isChecked = false
-            binding.approvedFilterChip.isChecked = false
-            binding.declinedFilterChip.isChecked = false
-            loadCancelledAppointments()
-        }
 
-        binding.allFilterChip.setOnClickListener {
-            binding.allFilterChip.isChecked = true
-            binding.pendingFilterChip.isChecked = false
-            binding.approvedFilterChip.isChecked = false
-            binding.declinedFilterChip.isChecked = false
-            binding.cancelledFilterChip.isChecked = false
-            loadAllAppointments()
-        }
+
+
+
+//        binding.pendingFilterChip.setOnClickListener {
+//            binding.pendingFilterChip.isChecked = true
+//            binding.allFilterChip.isChecked = false
+//            binding.approvedFilterChip.isChecked = false
+//            binding.declinedFilterChip.isChecked = false
+//            binding.cancelledFilterChip.isChecked = false
+//            loadPendingAppointments()
+//        }
+//
+//        binding.approvedFilterChip.setOnClickListener {
+//            binding.approvedFilterChip.isChecked = true
+//            binding.allFilterChip.isChecked = false
+//            binding.pendingFilterChip.isChecked = false
+//            binding.declinedFilterChip.isChecked = false
+//            binding.cancelledFilterChip.isChecked = false
+//            loadApprovedAppointments()
+//        }
+//
+//        binding.declinedFilterChip.setOnClickListener {
+//            binding.declinedFilterChip.isChecked = true
+//            binding.allFilterChip.isChecked = false
+//            binding.pendingFilterChip.isChecked = false
+//            binding.approvedFilterChip.isChecked = false
+//            binding.cancelledFilterChip.isChecked = false
+//            loadDeclineAppointments()
+//        }
+//
+//        binding.cancelledFilterChip.setOnClickListener {
+//            binding.cancelledFilterChip.isChecked = true
+//            binding.allFilterChip.isChecked = false
+//            binding.pendingFilterChip.isChecked = false
+//            binding.approvedFilterChip.isChecked = false
+//            binding.declinedFilterChip.isChecked = false
+//            loadCancelledAppointments()
+//        }
+//
+//        binding.allFilterChip.setOnClickListener {
+//            binding.allFilterChip.isChecked = true
+//            binding.pendingFilterChip.isChecked = false
+//            binding.approvedFilterChip.isChecked = false
+//            binding.declinedFilterChip.isChecked = false
+//            binding.cancelledFilterChip.isChecked = false
+//            loadAllAppointments()
+//        }
 
         updateDateDisplay()
 
@@ -131,15 +154,20 @@ class BookingApprovalRecords : AppCompatActivity() {
 
                         testRef.addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(testSnapshot: DataSnapshot) {
+                                val openApproved = intent.getBooleanExtra("openApprovedTab", false)
+
                                 if (testSnapshot.exists() && !foundClinic) {
                                     clinicName = testClinicName
                                     foundClinic = true
                                     Log.d("BookingApprovalRecords", "Found clinic name: $clinicName")
 
-                                    // Set default to pending appointments
-                                    binding.pendingFilterChip.isChecked = true
-                                    loadPendingAppointments()
+                                    if (openApproved) {
+                                        binding.approvedFilterChip.performClick()
+                                    } else {
+                                        binding.pendingFilterChip.performClick()
+                                    }
                                 }
+
                             }
 
                             override fun onCancelled(error: DatabaseError) {
@@ -173,192 +201,27 @@ class BookingApprovalRecords : AppCompatActivity() {
         binding.bookingRecyclerView.adapter = adapter
     }
 
-    private fun loadPendingAppointments() {
-        if (clinicName.isEmpty()) {
-            Log.w("BookingApprovalRecords", "Clinic name is empty, cannot load appointments")
-            return
-        }
 
-        binding.progressBar.visibility = View.VISIBLE
-        appointmentList.clear()
-
-        val doctorBookingsRef = database.getReference("clinicBookings")
-            .child(clinicName.replace(" ", "_").replace(".", ","))
-
-        Log.d("BookingApprovalRecords", "Loading pending appointments for clinic: $clinicName")
-        Log.d("BookingApprovalRecords", "Firebase path: clinicBookings/${clinicName.replace(" ", "_").replace(".", ",")}")
-
-        doctorBookingsRef.orderByChild("status").equalTo("pending")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    Log.d("BookingApprovalRecords", "Pending bookings found: ${snapshot.childrenCount}")
-
-                    if (snapshot.exists()) {
-                        for (bookingSnapshot in snapshot.children) {
-                            Log.d("BookingApprovalRecords", "Booking key: ${bookingSnapshot.key}")
-                            val booking = bookingSnapshot.getValue(BookingData::class.java)
-                            if (booking != null) {
-                                Log.d("BookingApprovalRecords", "Booking status: ${booking.status}, patient: ${booking.patientEmail}")
-                                appointmentList.add(booking)
-                            }
-                        }
-                        appointmentList.sortByDescending { it.timestampMillis }
-                        adapter.notifyDataSetChanged()
-                        updateViewVisibility()
-                    } else {
-                        Log.d("BookingApprovalRecords", "No pending bookings found")
-                        appointmentList.clear()
-                        adapter.notifyDataSetChanged()
-                        updateViewVisibility()
-                    }
-                    binding.progressBar.visibility = View.GONE
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@BookingApprovalRecords, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
-                    Log.e("BookingApprovalRecords", "Error loading pending appointments: ${error.message}")
-                    binding.progressBar.visibility = View.GONE
-                }
-            })
-    }
-
-    private fun loadApprovedAppointments() {
+    private fun loadAppointments(status: String? = null) {
         if (clinicName.isEmpty()) return
 
         binding.progressBar.visibility = View.VISIBLE
         appointmentList.clear()
 
-        val doctorBookingsRef = database.getReference("clinicBookings")
-            .child(clinicName.replace(" ", "_").replace(".", ","))
+        val safeClinicName = clinicName.replace(" ", "_").replace(".", ",")
+        val doctorBookingsRef = database.getReference("clinicBookings").child(safeClinicName)
 
-        doctorBookingsRef.orderByChild("status").equalTo("confirmed")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        for (bookingSnapshot in snapshot.children) {
-                            val booking = bookingSnapshot.getValue(BookingData::class.java)
-                            booking?.let {
-                                appointmentList.add(it)
-                            }
-                        }
-                        appointmentList.sortByDescending { it.timestampMillis }
-                        adapter.notifyDataSetChanged()
-                        updateViewVisibility()
-                    } else {
-                        appointmentList.clear()
-                        adapter.notifyDataSetChanged()
-                        updateViewVisibility()
-                    }
-                    binding.progressBar.visibility = View.GONE
-                }
+        val query = status?.let { doctorBookingsRef.orderByChild("status").equalTo(it) } ?: doctorBookingsRef
 
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@BookingApprovalRecords, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
-                    binding.progressBar.visibility = View.GONE
-                }
-            })
-    }
-
-    private fun loadDeclineAppointments() {
-        if (clinicName.isEmpty()) return
-
-        binding.progressBar.visibility = View.VISIBLE
-        appointmentList.clear()
-
-        val doctorBookingsRef = database.getReference("clinicBookings")
-            .child(clinicName.replace(" ", "_").replace(".", ","))
-
-        doctorBookingsRef.orderByChild("status").equalTo("declined")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        for (bookingSnapshot in snapshot.children) {
-                            val booking = bookingSnapshot.getValue(BookingData::class.java)
-                            booking?.let {
-                                appointmentList.add(it)
-                            }
-                        }
-                        appointmentList.sortByDescending { it.timestampMillis }
-                        adapter.notifyDataSetChanged()
-                        updateViewVisibility()
-                    } else {
-                        appointmentList.clear()
-                        adapter.notifyDataSetChanged()
-                        updateViewVisibility()
-                    }
-                    binding.progressBar.visibility = View.GONE
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@BookingApprovalRecords, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
-                    binding.progressBar.visibility = View.GONE
-                }
-            })
-    }
-
-    private fun loadCancelledAppointments() {
-        if (clinicName.isEmpty()) return
-
-        binding.progressBar.visibility = View.VISIBLE
-        appointmentList.clear()
-
-        val doctorBookingsRef = database.getReference("clinicBookings")
-            .child(clinicName.replace(" ", "_").replace(".", ","))
-
-        doctorBookingsRef.orderByChild("status").equalTo("cancelled")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        for (bookingSnapshot in snapshot.children) {
-                            val booking = bookingSnapshot.getValue(BookingData::class.java)
-                            booking?.let {
-                                appointmentList.add(it)
-                            }
-                        }
-                        appointmentList.sortByDescending { it.timestampMillis }
-                        adapter.notifyDataSetChanged()
-                        updateViewVisibility()
-                    } else {
-                        appointmentList.clear()
-                        adapter.notifyDataSetChanged()
-                        updateViewVisibility()
-                    }
-                    binding.progressBar.visibility = View.GONE
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@BookingApprovalRecords, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
-                    binding.progressBar.visibility = View.GONE
-                }
-            })
-    }
-
-    private fun loadAllAppointments() {
-        if (clinicName.isEmpty()) return
-
-        binding.progressBar.visibility = View.VISIBLE
-        appointmentList.clear()
-
-        val doctorBookingsRef = database.getReference("clinicBookings")
-            .child(clinicName.replace(" ", "_").replace(".", ","))
-
-        doctorBookingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+        query.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()) {
-                    for (bookingSnapshot in snapshot.children) {
-                        val booking = bookingSnapshot.getValue(BookingData::class.java)
-                        booking?.let {
-                            appointmentList.add(it)
-                        }
-                    }
-                    appointmentList.sortByDescending { it.timestampMillis }
-                    adapter.notifyDataSetChanged()
-                    updateViewVisibility()
-                } else {
-                    appointmentList.clear()
-                    adapter.notifyDataSetChanged()
-                    updateViewVisibility()
+                for (bookingSnapshot in snapshot.children) {
+                    val booking = bookingSnapshot.getValue(BookingData::class.java)
+                    booking?.let { appointmentList.add(it) }
                 }
+                appointmentList.sortByDescending { it.timestampMillis }
+                adapter.notifyDataSetChanged()
+                updateViewVisibility()
                 binding.progressBar.visibility = View.GONE
             }
 
@@ -368,6 +231,202 @@ class BookingApprovalRecords : AppCompatActivity() {
             }
         })
     }
+
+//    private fun loadPendingAppointments() {
+//        if (clinicName.isEmpty()) {
+//            Log.w("BookingApprovalRecords", "Clinic name is empty, cannot load appointments")
+//            return
+//        }
+//
+//        binding.progressBar.visibility = View.VISIBLE
+//        appointmentList.clear()
+//
+//        val doctorBookingsRef = database.getReference("clinicBookings")
+//            .child(clinicName.replace(" ", "_").replace(".", ","))
+//
+//        Log.d("BookingApprovalRecords", "Loading pending appointments for clinic: $clinicName")
+//        Log.d("BookingApprovalRecords", "Firebase path: clinicBookings/${clinicName.replace(" ", "_").replace(".", ",")}")
+//
+//        doctorBookingsRef.orderByChild("status").equalTo("pending")
+//            .addListenerForSingleValueEvent(object : ValueEventListener {
+//                override fun onDataChange(snapshot: DataSnapshot) {
+//                    Log.d("BookingApprovalRecords", "Pending bookings found: ${snapshot.childrenCount}")
+//
+//                    if (snapshot.exists()) {
+//                        for (bookingSnapshot in snapshot.children) {
+//                            Log.d("BookingApprovalRecords", "Booking key: ${bookingSnapshot.key}")
+//                            val booking = bookingSnapshot.getValue(BookingData::class.java)
+//                            if (booking != null) {
+//                                Log.d("BookingApprovalRecords", "Booking status: ${booking.status}, patient: ${booking.patientEmail}")
+//                                appointmentList.add(booking)
+//                            }
+//                        }
+//                        appointmentList.sortByDescending { it.timestampMillis }
+//                        adapter.notifyDataSetChanged()
+//                        updateViewVisibility()
+//                    } else {
+//                        Log.d("BookingApprovalRecords", "No pending bookings found")
+//                        appointmentList.clear()
+//                        adapter.notifyDataSetChanged()
+//                        updateViewVisibility()
+//                    }
+//                    binding.progressBar.visibility = View.GONE
+//                }
+//
+//                override fun onCancelled(error: DatabaseError) {
+//                    Toast.makeText(this@BookingApprovalRecords, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+//                    Log.e("BookingApprovalRecords", "Error loading pending appointments: ${error.message}")
+//                    binding.progressBar.visibility = View.GONE
+//                }
+//            })
+//    }
+//
+//    private fun loadApprovedAppointments() {
+//        if (clinicName.isEmpty()) return
+//
+//        binding.progressBar.visibility = View.VISIBLE
+//        appointmentList.clear()
+//
+//        val doctorBookingsRef = database.getReference("clinicBookings")
+//            .child(clinicName.replace(" ", "_").replace(".", ","))
+//
+//        doctorBookingsRef.orderByChild("status").equalTo("confirmed")
+//            .addListenerForSingleValueEvent(object : ValueEventListener {
+//                override fun onDataChange(snapshot: DataSnapshot) {
+//                    if (snapshot.exists()) {
+//                        for (bookingSnapshot in snapshot.children) {
+//                            val booking = bookingSnapshot.getValue(BookingData::class.java)
+//                            booking?.let {
+//                                appointmentList.add(it)
+//                            }
+//                        }
+//                        appointmentList.sortByDescending { it.timestampMillis }
+//                        adapter.notifyDataSetChanged()
+//                        updateViewVisibility()
+//                    } else {
+//                        appointmentList.clear()
+//                        adapter.notifyDataSetChanged()
+//                        updateViewVisibility()
+//                    }
+//                    binding.progressBar.visibility = View.GONE
+//                }
+//
+//                override fun onCancelled(error: DatabaseError) {
+//                    Toast.makeText(this@BookingApprovalRecords, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+//                    binding.progressBar.visibility = View.GONE
+//                }
+//            })
+//    }
+//
+//    private fun loadDeclineAppointments() {
+//        if (clinicName.isEmpty()) return
+//
+//        binding.progressBar.visibility = View.VISIBLE
+//        appointmentList.clear()
+//
+//        val doctorBookingsRef = database.getReference("clinicBookings")
+//            .child(clinicName.replace(" ", "_").replace(".", ","))
+//
+//        doctorBookingsRef.orderByChild("status").equalTo("declined")
+//            .addListenerForSingleValueEvent(object : ValueEventListener {
+//                override fun onDataChange(snapshot: DataSnapshot) {
+//                    if (snapshot.exists()) {
+//                        for (bookingSnapshot in snapshot.children) {
+//                            val booking = bookingSnapshot.getValue(BookingData::class.java)
+//                            booking?.let {
+//                                appointmentList.add(it)
+//                            }
+//                        }
+//                        appointmentList.sortByDescending { it.timestampMillis }
+//                        adapter.notifyDataSetChanged()
+//                        updateViewVisibility()
+//                    } else {
+//                        appointmentList.clear()
+//                        adapter.notifyDataSetChanged()
+//                        updateViewVisibility()
+//                    }
+//                    binding.progressBar.visibility = View.GONE
+//                }
+//
+//                override fun onCancelled(error: DatabaseError) {
+//                    Toast.makeText(this@BookingApprovalRecords, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+//                    binding.progressBar.visibility = View.GONE
+//                }
+//            })
+//    }
+//
+//    private fun loadCancelledAppointments() {
+//        if (clinicName.isEmpty()) return
+//
+//        binding.progressBar.visibility = View.VISIBLE
+//        appointmentList.clear()
+//
+//        val doctorBookingsRef = database.getReference("clinicBookings")
+//            .child(clinicName.replace(" ", "_").replace(".", ","))
+//
+//        doctorBookingsRef.orderByChild("status").equalTo("cancelled")
+//            .addListenerForSingleValueEvent(object : ValueEventListener {
+//                override fun onDataChange(snapshot: DataSnapshot) {
+//                    if (snapshot.exists()) {
+//                        for (bookingSnapshot in snapshot.children) {
+//                            val booking = bookingSnapshot.getValue(BookingData::class.java)
+//                            booking?.let {
+//                                appointmentList.add(it)
+//                            }
+//                        }
+//                        appointmentList.sortByDescending { it.timestampMillis }
+//                        adapter.notifyDataSetChanged()
+//                        updateViewVisibility()
+//                    } else {
+//                        appointmentList.clear()
+//                        adapter.notifyDataSetChanged()
+//                        updateViewVisibility()
+//                    }
+//                    binding.progressBar.visibility = View.GONE
+//                }
+//
+//                override fun onCancelled(error: DatabaseError) {
+//                    Toast.makeText(this@BookingApprovalRecords, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+//                    binding.progressBar.visibility = View.GONE
+//                }
+//            })
+//    }
+//
+//    private fun loadAllAppointments() {
+//        if (clinicName.isEmpty()) return
+//
+//        binding.progressBar.visibility = View.VISIBLE
+//        appointmentList.clear()
+//
+//        val doctorBookingsRef = database.getReference("clinicBookings")
+//            .child(clinicName.replace(" ", "_").replace(".", ","))
+//
+//        doctorBookingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                if (snapshot.exists()) {
+//                    for (bookingSnapshot in snapshot.children) {
+//                        val booking = bookingSnapshot.getValue(BookingData::class.java)
+//                        booking?.let {
+//                            appointmentList.add(it)
+//                        }
+//                    }
+//                    appointmentList.sortByDescending { it.timestampMillis }
+//                    adapter.notifyDataSetChanged()
+//                    updateViewVisibility()
+//                } else {
+//                    appointmentList.clear()
+//                    adapter.notifyDataSetChanged()
+//                    updateViewVisibility()
+//                }
+//                binding.progressBar.visibility = View.GONE
+//            }
+//
+//            override fun onCancelled(error: DatabaseError) {
+//                Toast.makeText(this@BookingApprovalRecords, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+//                binding.progressBar.visibility = View.GONE
+//            }
+//        })
+//    }
 
     private fun updateViewVisibility() {
         if (appointmentList.isEmpty()) {
@@ -513,13 +572,22 @@ class BookingApprovalRecords : AppCompatActivity() {
 
     private fun refreshCurrentView() {
         when {
-            binding.pendingFilterChip.isChecked -> loadPendingAppointments()
-            binding.approvedFilterChip.isChecked -> loadApprovedAppointments()
-            binding.declinedFilterChip.isChecked -> loadDeclineAppointments()
-            binding.cancelledFilterChip.isChecked -> loadCancelledAppointments()
-            else -> loadAllAppointments()
+            binding.pendingFilterChip.isChecked -> loadAppointments("pending")
+            binding.approvedFilterChip.isChecked -> loadAppointments("confirmed")
+            binding.declinedFilterChip.isChecked -> loadAppointments("declined")
+            binding.cancelledFilterChip.isChecked -> loadAppointments("cancelled")
+            else -> loadAppointments()
         }
     }
+//    private fun refreshCurrentView() {
+//        when {
+//            binding.pendingFilterChip.isChecked -> loadPendingAppointments()
+//            binding.approvedFilterChip.isChecked -> loadApprovedAppointments()
+//            binding.declinedFilterChip.isChecked -> loadDeclineAppointments()
+//            binding.cancelledFilterChip.isChecked -> loadCancelledAppointments()
+//            else -> loadAllAppointments()
+//        }
+//    }
 
     private fun showDeclineReasonDialog(booking: BookingData) {
         val builder = AlertDialog.Builder(this)

@@ -10,7 +10,7 @@
     <string name="password">Password&lt;font color=\'#FF0000\'&gt;*&lt;/font&gt;</string>
     <string name="confirm_password">Confirm Password&lt;font color=\'#FF0000\'&gt;*&lt;/font&gt;</string>
     <string name="submit">Submit</string>
-    <string name="introDerma">The dermatologist can review AI-generated skin health assessments, manage consultation bookings with users, and access patient history and reports.</string>
+    <string name="introDerma">The Derma Clinic can review AI-generated skin health assessments, manage consultation bookings with users, and access patient history and reports.</string>
     <string name="close">Close</string>
     <string name="select">Select</string>
 
@@ -36,4 +36,5 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="todo">TODO</string>
+    <string name="view_all"><u>View All</u></string>
 </resources>

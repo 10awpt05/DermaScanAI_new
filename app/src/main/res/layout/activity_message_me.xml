@@ -32,12 +32,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+
+
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardView5"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:cardCornerRadius="15dp"
-        app:cardBackgroundColor="@color/white"
         android:layout_margin="15dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="15dp"
         app:contentPadding="15dp"
         app:layout_constraintBottom_toTopOf="@+id/messageText"
         app:layout_constraintEnd_toEndOf="parent"
@@ -50,11 +53,20 @@
             android:layout_height="wrap_content" />
     </androidx.cardview.widget.CardView>
 
+    <ImageView
+        android:id="@+id/attachFile"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:src="@drawable/ic_clip"
+        app:layout_constraintBottom_toBottomOf="@+id/messageText"
+        app:layout_constraintStart_toStartOf="@+id/cardView5"
+        app:layout_constraintTop_toTopOf="@+id/messageText"
+        app:tint="@color/main_green" />
+
     <androidx.appcompat.widget.AppCompatEditText
         android:id="@+id/messageText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="15dp"
         android:layout_marginEnd="10dp"
         android:background="@drawable/bg_rounded"
         android:hint="Type Here..."
@@ -62,7 +74,7 @@
         android:textSize="15sp"
         app:layout_constraintBottom_toBottomOf="@+id/send"
         app:layout_constraintEnd_toStartOf="@+id/send"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/attachFile"
         app:layout_constraintTop_toTopOf="@+id/send" />
 
     <ImageView

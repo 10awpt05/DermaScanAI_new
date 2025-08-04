@@ -152,9 +152,7 @@
 
             navView.setNavigationItemSelectedListener { menuItem ->
                 when (menuItem.itemId) {
-                    R.id.settings -> {
-                        Toast.makeText(this, "Settings Clicked", Toast.LENGTH_SHORT).show()
-                    }
+
                     R.id.nav_terms -> {
                         val intent = Intent(this, TermsConditions::class.java)
                         startActivity(intent)

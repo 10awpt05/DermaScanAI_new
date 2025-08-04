@@ -15,6 +15,7 @@
         android:text="Author:"
         android:layout_marginEnd="5dp"
         android:textColor="@color/black"
+        android:textStyle="italic"
         app:layout_constraintBottom_toBottomOf="@+id/textView23"
         app:layout_constraintEnd_toStartOf="@+id/textView23"
         app:layout_constraintTop_toTopOf="@+id/textView23" />
@@ -27,14 +28,14 @@
         android:layout_marginEnd="15dp"
         android:text="Name"
         android:textColor="@color/black"
-        android:textStyle="bold"
+        android:textStyle="bold|italic"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/backBTN"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
         android:src="@drawable/back_arrow"
         android:layout_margin="15dp"
         android:clickable="true"
@@ -48,6 +49,8 @@
         android:text="Title Here"
         android:textColor="@color/black"
         android:textSize="25sp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
         android:textStyle="bold"
         android:layout_marginTop="40dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -68,7 +71,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:padding="15dp"
-        android:backgroundTint="@color/white"
+        android:backgroundTint="#9950D890"
         app:layout_constraintBottom_toTopOf="@+id/commentInputLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -77,7 +80,9 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewResponse"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:padding="10dp"/>
 
 
     </androidx.cardview.widget.CardView>
@@ -98,16 +103,17 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/edit_text_background"
-            android:hint="Write a comment..."
+            android:hint="Write a Response..."
             android:padding="8dp" />
 
         <ImageView
             android:id="@+id/sendBtn"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
+            android:layout_width="40dp"
+            android:layout_height="38dp"
             android:contentDescription="Send comment"
-            android:padding="8dp"
-            android:src="@drawable/ic_send" />
+            android:layout_gravity="center"
+            android:padding="4dp"
+            android:src="@drawable/ic_send_g" />
     </LinearLayout>
 
 

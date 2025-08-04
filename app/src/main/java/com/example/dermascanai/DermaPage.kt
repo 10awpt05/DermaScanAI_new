@@ -5,24 +5,48 @@ import android.animation.ObjectAnimator
 import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.dermascanai.UserPage
 import com.example.dermascanai.databinding.ActivityDermaPageBinding
 import com.example.dermascanai.databinding.ActivityUserPageBinding
+import com.example.dermascanai.databinding.LayoutNotificationPopupBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class DermaPage : AppCompatActivity() {
+
     private lateinit var binding: ActivityDermaPageBinding
     private var isFabMenuOpen = false
     private lateinit var notificationListener: ChildEventListener
     private var notificationListenerStartTime: Long = 0
+
+    private lateinit var database: FirebaseDatabase
+    private lateinit var mAuth: FirebaseAuth
+
+    private lateinit var notificationBinding: LayoutNotificationPopupBinding
+    private lateinit var notificationAdapter: NotificationAdapter
+    private val notificationList = mutableListOf<Notification>()
+
+    private val notificationRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+        .getReference("notifications")
+
+    private var selectedTab = "home" // Track selected tab
+    private var isTabSwitching = false
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,16 +54,95 @@ class DermaPage : AppCompatActivity() {
         binding = ActivityDermaPageBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val drawerLayout = binding.drawerLayout
+        val navView = binding.navigationView
 
+        database = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+        mAuth = FirebaseAuth.getInstance()
+
+        val headerView = navView.getHeaderView(0)
+        val closeDrawerBtn = headerView.findViewById<ImageView>(R.id.closeDrawerBtn)
+
+
+        notificationBinding = LayoutNotificationPopupBinding.inflate(layoutInflater)
+        val popupWindow = PopupWindow(
+            notificationBinding.root,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            true
+        )
+
+        val notifRecyclerView = notificationBinding.notificationRecyclerView
+        notifRecyclerView.layoutManager = LinearLayoutManager(this)
+        notificationAdapter = NotificationAdapter(this, notificationList)
+        notifRecyclerView.adapter = notificationAdapter
 
         listenForNotifications()
 
+
+        val userId = mAuth.currentUser?.uid
+        val userNotificationsRef = notificationRef.child(userId!!)
+        userNotificationsRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                notificationList.clear()
+                var hasUnread = false
+                for (notifSnapshot in snapshot.children) {
+                    val notif = notifSnapshot.getValue(Notification::class.java)
+                    notif?.let {
+                        notificationList.add(it)
+                        if (!it.isRead) {
+                            hasUnread = true
+                        }
+                    }
+                }
+                notificationList.sortByDescending { it.timestamp }
+                notificationAdapter.notifyDataSetChanged()
+                binding.notificationDot.visibility = if (!hasUnread) View.GONE else View.VISIBLE
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+
+        binding.notificationIcon.setOnClickListener {
+            popupWindow.showAsDropDown(binding.notificationIcon, -100, 20)
+            binding.notificationDot.visibility = View.GONE
+            userNotificationsRef.get().addOnSuccessListener { snapshot ->
+                for (notifSnapshot in snapshot.children) {
+                    notifSnapshot.ref.child("isRead").setValue(true)
+                }
+
+                Handler(Looper.getMainLooper()).postDelayed({
+                    binding.notificationDot.visibility = View.GONE
+                }, 300)
+            }
+        }
+
+        binding.menuIcon.setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.END)
+        }
+
+        closeDrawerBtn.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.END)
+        }
+
+        navView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_terms -> startActivity(Intent(this, TermsConditions::class.java))
+                R.id.privacy -> startActivity(Intent(this, PrivacyPolicy::class.java))
+                R.id.nav_logout -> logoutUser()
+            }
+            drawerLayout.closeDrawers()
+            true
+        }
+
+
+
         showHomeText()
-        val fabCard = binding.fabCard
+//        val fabCard = binding.fabCard
 
         binding.fabMain.bringToFront()
         binding.fabMain.translationZ = 16f
         binding.fabMain.elevation = 12f
+        binding.fabScan.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_scan_white))
 
 
         binding.coordinatorLayout.setOnClickListener {
@@ -53,56 +156,45 @@ class DermaPage : AppCompatActivity() {
         }
 
         binding.navHome.setOnClickListener {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.nav_host_fragment, DermaHomeFragment())
-                .commit()
-            showHomeText()
-            closeFabMenu()
-            binding.homeImg.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_home2))
-
-            // Reset Profile icon to default
-            binding.profileImg.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_profile2))
+            if (selectedTab != "home" && !isTabSwitching) {
+                isTabSwitching = true
+                switchToHomeFragment()
+            }
         }
 
         binding.navProfile.setOnClickListener {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.nav_host_fragment, DermaProfileFragment())
-                .commit()
-            showProfileText()
-            closeFabMenu()
-            binding.profileImg.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_profile2a))
-
-            // Reset Home icon to default
-            binding.homeImg.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_home))
+            if (selectedTab != "profile" && !isTabSwitching) {
+                isTabSwitching = true
+                switchToProfileFragment()
+            }
         }
+
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.nav_host_fragment, DermaHomeFragment())
             .commit()
 
         binding.fabMain.setOnClickListener {
+            val fabCard = binding.fabCard
             val upAnim = ObjectAnimator.ofFloat(fabCard, "translationY", fabCard.translationY, fabCard.translationY - 20f)
             val downAnim = ObjectAnimator.ofFloat(fabCard, "translationY", fabCard.translationY - 20f, fabCard.translationY)
             upAnim.duration = 100
             downAnim.duration = 100
-
-            val animatorSet = AnimatorSet()
-            animatorSet.playSequentially(upAnim, downAnim)
-            animatorSet.start()
-
+            AnimatorSet().apply {
+                playSequentially(upAnim, downAnim)
+                start()
+            }
             toggleFabMenu()
         }
 
 
 
         binding.fabScan.setOnClickListener {
-            val intent = Intent(this, MainPage::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, MainPage::class.java))
         }
 
         binding.fabBlog.setOnClickListener {
-            val intent = Intent(this, BlogActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, BlogActivity::class.java))
         }
     }
 
@@ -257,4 +349,62 @@ class DermaPage : AppCompatActivity() {
         }
         mediaPlayer.start()
     }
+
+    private fun logoutUser() {
+        val builder = android.app.AlertDialog.Builder(this@DermaPage)
+        builder.setTitle("Logout")
+        builder.setMessage("Are you sure you want to logout?")
+
+        builder.setPositiveButton("Yes") { dialog, _ ->
+            FirebaseAuth.getInstance().signOut()
+            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+
+            val intent = Intent(this, Login::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            dialog.dismiss()
+        }
+
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.dismiss()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    private fun switchToHomeFragment() {
+        selectedTab = "home"
+        binding.navHome.isEnabled = false
+        binding.navProfile.isEnabled = true
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.nav_host_fragment, DermaHomeFragment())
+            .commit()
+
+        showHomeText()
+        closeFabMenu()
+        binding.homeImg.setImageResource(R.drawable.ic_home2_g)
+        binding.profileImg.setImageResource(R.drawable.ic_profile2)
+
+        Handler(Looper.getMainLooper()).postDelayed({ isTabSwitching = false }, 500)
+    }
+
+    private fun switchToProfileFragment() {
+        selectedTab = "profile"
+        binding.navProfile.isEnabled = false
+        binding.navHome.isEnabled = true
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.nav_host_fragment, DermaProfileFragment())
+            .commit()
+
+        showProfileText()
+        closeFabMenu()
+        binding.profileImg.setImageResource(R.drawable.ic_profile2a_g)
+        binding.homeImg.setImageResource(R.drawable.ic_home)
+
+        Handler(Looper.getMainLooper()).postDelayed({ isTabSwitching = false }, 500)
+    }
+
 }

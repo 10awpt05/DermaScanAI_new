@@ -50,6 +50,14 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.firebase.auth)
+
+    implementation ("pl.droidsonroids.gif:android-gif-drawable:1.2.27")
+
+    implementation ("com.prolificinteractive:material-calendarview:1.4.3")
+
+    implementation ("com.google.mlkit:segmentation-selfie:16.0.0-beta3")
+
+
     implementation("org.mindrot:jbcrypt:0.4")
     implementation("androidx.palette:palette:1.0.0")
 

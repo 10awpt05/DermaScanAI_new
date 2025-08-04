@@ -73,10 +73,15 @@ class DermaProfileFragment : Fragment() {
             true
         )
 
-        binding.Records.setOnClickListener {
-            val intent = Intent(requireContext(), DermaRecords::class.java)
+        binding.message.setOnClickListener {
+            val intent = Intent(requireContext(), ChatUserListActivity::class.java)
             startActivity(intent)
         }
+
+//        binding.Records.setOnClickListener {
+//            val intent = Intent(requireContext(), DermaRecords::class.java)
+//            startActivity(intent)
+//        }
 
         binding.appointmentBtn.setOnClickListener {
             val intent = Intent(requireContext(), BookingApprovalRecords::class.java)
@@ -92,46 +97,46 @@ class DermaProfileFragment : Fragment() {
 
         val userId = mAuth.currentUser?.uid
 
-        val userNotificationsRef = notificationRef.child(userId!!)
-        userNotificationsRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                notificationList.clear()
-                var hasUnread = false
-                for (notifSnapshot in snapshot.children) {
-                    val notif = notifSnapshot.getValue(Notification::class.java)
-                    notif?.let {
-                        notificationList.add(it)
-                        if (!it.isRead) {
-                            hasUnread = true
-                        }
-                    }
-                }
-
-
-                notificationList.sortByDescending { it.timestamp }
-
-                notificationAdapter.notifyDataSetChanged()
-
-                binding.notificationDot.visibility = if (hasUnread) View.VISIBLE else View.GONE
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
-            }
-        })
-
-        binding.notificationIcon.setOnClickListener {
-            popupWindow.showAsDropDown(binding.notificationIcon, -100, 20)
-
-            binding.notificationDot.visibility = View.GONE
-
-            userNotificationsRef.get().addOnSuccessListener { snapshot ->
-                for (notifSnapshot in snapshot.children) {
-                    notifSnapshot.ref.child("isRead").setValue(true)
-                }
-            }
-
-        }
+//        val userNotificationsRef = notificationRef.child(userId!!)
+//        userNotificationsRef.addValueEventListener(object : ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                notificationList.clear()
+//                var hasUnread = false
+//                for (notifSnapshot in snapshot.children) {
+//                    val notif = notifSnapshot.getValue(Notification::class.java)
+//                    notif?.let {
+//                        notificationList.add(it)
+//                        if (!it.isRead) {
+//                            hasUnread = true
+//                        }
+//                    }
+//                }
+//
+//
+//                notificationList.sortByDescending { it.timestamp }
+//
+//                notificationAdapter.notifyDataSetChanged()
+//
+//                binding.notificationDot.visibility = if (hasUnread) View.VISIBLE else View.GONE
+//            }
+//
+//            override fun onCancelled(error: DatabaseError) {
+//                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+//            }
+//        })
+//
+//        binding.notificationIcon.setOnClickListener {
+//            popupWindow.showAsDropDown(binding.notificationIcon, -100, 20)
+//
+//            binding.notificationDot.visibility = View.GONE
+//
+//            userNotificationsRef.get().addOnSuccessListener { snapshot ->
+//                for (notifSnapshot in snapshot.children) {
+//                    notifSnapshot.ref.child("isRead").setValue(true)
+//                }
+//            }
+//
+//        }
 
         binding.ratings.setOnClickListener {
             val clinicId = mAuth.currentUser?.uid
@@ -141,10 +146,10 @@ class DermaProfileFragment : Fragment() {
         }
 
 
-        binding.menuIcon.setOnClickListener {
-            val drawerLayout = requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
-            drawerLayout.openDrawer(GravityCompat.END)
-        }
+//        binding.menuIcon.setOnClickListener {
+//            val drawerLayout = requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
+//            drawerLayout.openDrawer(GravityCompat.END)
+//        }
 
 
         closeDrawerBtn.setOnClickListener {
@@ -153,9 +158,7 @@ class DermaProfileFragment : Fragment() {
 
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.settings -> {
-                    Toast.makeText(context, "Settings Clicked", Toast.LENGTH_SHORT).show()
-                }
+
                 R.id.nav_terms -> {
                     val intent = Intent(requireContext(), TermsConditions::class.java)
                     startActivity(intent)
@@ -175,59 +178,59 @@ class DermaProfileFragment : Fragment() {
 
 
         fetchUserData()
-        val imageView = binding.bannerImg
+//        val imageView = binding.bannerImg
+//
+//        imageView.drawable?.let { drawable ->
+//            val bitmap = (drawable as BitmapDrawable).bitmap
+//            Palette.from(bitmap).generate { palette ->
+//                palette?.let {
+//                    val dominantColor = it.getDominantColor(Color.WHITE)
+//                    val isDark = isColorDark(dominantColor)
+//                    val textColor = if (isDark) Color.WHITE else Color.BLACK
+//                    binding.fullName.setTextColor(textColor)
+//                    binding.status.setTextColor(textColor)
+//
+//                }
+//            }
+//        }
 
-        imageView.drawable?.let { drawable ->
-            val bitmap = (drawable as BitmapDrawable).bitmap
-            Palette.from(bitmap).generate { palette ->
-                palette?.let {
-                    val dominantColor = it.getDominantColor(Color.WHITE)
-                    val isDark = isColorDark(dominantColor)
-                    val textColor = if (isDark) Color.WHITE else Color.BLACK
-                    binding.fullName.setTextColor(textColor)
-                    binding.status.setTextColor(textColor)
-
-                }
-            }
-        }
-
-        binding.logout.setOnClickListener {
-            logoutUser()
-        }
+//        binding.logout.setOnClickListener {
+//            logoutUser()
+//        }
 
         binding.btnToggleInfo.setOnClickListener {
             val intent = Intent(requireContext(), ClinicProfile::class.java)
             startActivity(intent)
         }
-        binding.editBannerIcon.setOnClickListener {
-            val banners = listOf(
-                R.drawable.banner1,
-                R.drawable.banner2,
-                R.drawable.banner3,
-                R.drawable.banner4,
-                R.drawable.banner5,
-                R.drawable.banner6,
-                R.drawable.banner7,
-                R.drawable.banner8,
-                R.drawable.banner9,
-                R.drawable.banner10,
-                R.drawable.banner11,
-                R.drawable.banner12
-
-            )
-
-            val dialog = AlertDialog.Builder(requireContext())
-                .setTitle("Choose a Banner")
-                .setItems(arrayOf("Banner 1", "Banner 2", "Banner 3", "Banner 4", "Banner 5", "Banner 6", "Banner 7", "Banner 8", "Banner 9", "Banner 10", "Banner 11", "Banner 12")) { _, which ->
-                    binding.bannerImg.setImageResource(banners[which])
-                }
-                .create()
-
-            dialog.show()
-        }
-
-
-
+//        binding.editBannerIcon.setOnClickListener {
+//            val banners = listOf(
+//                R.drawable.banner1,
+//                R.drawable.banner2,
+//                R.drawable.banner3,
+//                R.drawable.banner4,
+//                R.drawable.banner5,
+//                R.drawable.banner6,
+//                R.drawable.banner7,
+//                R.drawable.banner8,
+//                R.drawable.banner9,
+//                R.drawable.banner10,
+//                R.drawable.banner11,
+//                R.drawable.banner12
+//
+//            )
+//
+//            val dialog = AlertDialog.Builder(requireContext())
+//                .setTitle("Choose a Banner")
+//                .setItems(arrayOf("Banner 1", "Banner 2", "Banner 3", "Banner 4", "Banner 5", "Banner 6", "Banner 7", "Banner 8", "Banner 9", "Banner 10", "Banner 11", "Banner 12")) { _, which ->
+//                    binding.bannerImg.setImageResource(banners[which])
+//                }
+//                .create()
+//
+//            dialog.show()
+//        }
+//
+//
+//
     }
 
     override fun onDestroyView() {

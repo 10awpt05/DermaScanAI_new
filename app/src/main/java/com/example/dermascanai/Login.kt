@@ -18,7 +18,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.DatabaseError
-
+import pl.droidsonroids.gif.GifDrawable
 
 
 class Login : AppCompatActivity() {
@@ -65,13 +65,14 @@ class Login : AppCompatActivity() {
             Toast.makeText(this, "Please fill in both fields", Toast.LENGTH_SHORT).show()
             return
         }
-
+        showProgressBar()
         // Show progress or loading animation here
         mAuth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     redirectToRolePage()  // Redirection based on the role after successful login
                 } else {
+                    hideProgressBar()
                     Toast.makeText(this, "Authentication failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -80,6 +81,7 @@ class Login : AppCompatActivity() {
     private fun redirectToRolePage() {
         val userId = mAuth.currentUser?.uid
         if (userId != null) {
+            showProgressBar()
             mDatabase.child(userId).child("role")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -97,8 +99,10 @@ class Login : AppCompatActivity() {
                                 }
                             }
                             intent?.let {
+
                                 startActivity(it)
                                 finish()  // Close login screen after successful redirection
+                                hideProgressBar()
                             }
                         } else {
                             dDatabase.child(userId).child("role")
@@ -118,22 +122,27 @@ class Login : AppCompatActivity() {
                                                 }
                                             }
                                             intent?.let {
+
                                                 startActivity(it)
                                                 finish()  // Close login screen after successful redirection
+                                                hideProgressBar()
                                             }
                                         } else {
-                                            Toast.makeText(this@Login, "No role found for this user", Toast.LENGTH_SHORT).show()
+                                            hideProgressBar()
+//                                            Toast.makeText(this@Login, "No role found for this user", Toast.LENGTH_SHORT).show()
                                         }
                                     }
 
                                     override fun onCancelled(databaseError: DatabaseError) {
-                                        Toast.makeText(this@Login, "Error: ${databaseError.message}", Toast.LENGTH_SHORT).show()
+                                        hideProgressBar()
+//                                        Toast.makeText(this@Login, "Error: ${databaseError.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 })
                         }
                     }
 
                     override fun onCancelled(databaseError: DatabaseError) {
+                        hideProgressBar()
                         Toast.makeText(this@Login, "Error: ${databaseError.message}", Toast.LENGTH_SHORT).show()
                     }
                 })
@@ -159,11 +168,17 @@ class Login : AppCompatActivity() {
     }
 
     private fun showProgressBar() {
+        val gifDrawable = binding.animatedProgressBar.drawable as? GifDrawable
+        gifDrawable?.apply {
+
+            start()
+        }
         binding.progressContainer.visibility = View.VISIBLE
     }
 
-    // Hide progress bar using binding
     private fun hideProgressBar() {
+        val gifDrawable = binding.animatedProgressBar.drawable as? GifDrawable
+        gifDrawable?.stop() // optional: stop playback if still running
         binding.progressContainer.visibility = View.GONE
     }
 }

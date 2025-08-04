@@ -4,9 +4,11 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.location.Geocoder
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,6 +28,10 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.prolificinteractive.materialcalendarview.CalendarDay
+import com.prolificinteractive.materialcalendarview.DayViewDecorator
+import com.prolificinteractive.materialcalendarview.DayViewFacade
+import com.prolificinteractive.materialcalendarview.spans.DotSpan
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -41,9 +47,11 @@ class DermaHomeFragment : Fragment() {
     private val notificationList = mutableListOf<Notification>()
     private lateinit var mapFragment: SupportMapFragment
     private lateinit var googleMap: GoogleMap
+    private val confirmedDates = HashSet<CalendarDay>()
 
-    private val notificationRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
-        .getReference("notifications")
+
+//    private val notificationRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+//        .getReference("notifications")
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -75,6 +83,9 @@ class DermaHomeFragment : Fragment() {
             startActivity(intent)
         }
 
+        fetchConfirmedBookingsAndDecorateCalendar()
+
+
         binding.dateTimeText.text = formatted
 
         notificationBinding = LayoutNotificationPopupBinding.inflate(layoutInflater)
@@ -91,50 +102,50 @@ class DermaHomeFragment : Fragment() {
         notifRecyclerView.adapter = notificationAdapter
 
         val userId = mAuth.currentUser?.uid
-        val userNotificationsRef = notificationRef.child(userId!!)
-        userNotificationsRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                notificationList.clear()
-                var hasUnread = false
-                for (notifSnapshot in snapshot.children) {
-                    val notif = notifSnapshot.getValue(Notification::class.java)
-                    notif?.let {
-                        notificationList.add(it)
-                        if (!it.isRead) hasUnread = true
-                    }
-                }
-                notificationList.sortByDescending { it.timestamp }
-                notificationAdapter.notifyDataSetChanged()
-                binding.notificationDot.visibility = if (hasUnread) View.VISIBLE else View.GONE
-            }
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
-            }
-        })
+//        val userNotificationsRef = notificationRef.child(userId!!)
+//        userNotificationsRef.addValueEventListener(object : ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                notificationList.clear()
+//                var hasUnread = false
+//                for (notifSnapshot in snapshot.children) {
+//                    val notif = notifSnapshot.getValue(Notification::class.java)
+//                    notif?.let {
+//                        notificationList.add(it)
+//                        if (!it.isRead) hasUnread = true
+//                    }
+//                }
+//                notificationList.sortByDescending { it.timestamp }
+//                notificationAdapter.notifyDataSetChanged()
+//                binding.notificationDot.visibility = if (hasUnread) View.VISIBLE else View.GONE
+//            }
+//            override fun onCancelled(error: DatabaseError) {
+//                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+//            }
+//        })
 
-        binding.notificationIcon.setOnClickListener {
-            popupWindow.showAsDropDown(binding.notificationIcon, -100, 20)
-            binding.notificationDot.visibility = View.GONE
-            userNotificationsRef.get().addOnSuccessListener { snapshot ->
-                for (notifSnapshot in snapshot.children) {
-                    notifSnapshot.ref.child("isRead").setValue(true)
-                }
-            }
-        }
+//        binding.notificationIcon.setOnClickListener {
+//            popupWindow.showAsDropDown(binding.notificationIcon, -100, 20)
+//            binding.notificationDot.visibility = View.GONE
+//            userNotificationsRef.get().addOnSuccessListener { snapshot ->
+//                for (notifSnapshot in snapshot.children) {
+//                    notifSnapshot.ref.child("isRead").setValue(true)
+//                }
+//            }
+//        }
         displayTopBlogPost(binding) // ---------------------------------------------------------------------
 
 
-        binding.menuIcon.setOnClickListener {
-            drawerLayout.openDrawer(GravityCompat.END)
-        }
+//        binding.menuIcon.setOnClickListener {
+//            drawerLayout.openDrawer(GravityCompat.END)
+//        }
 
         closeDrawerBtn.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.END)
-        }
+            }
 
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.settings -> Toast.makeText(context, "Settings Clicked", Toast.LENGTH_SHORT).show()
+
                 R.id.nav_terms -> startActivity(Intent(requireContext(), TermsConditions::class.java))
                 R.id.privacy -> startActivity(Intent(requireContext(), PrivacyPolicy::class.java))
                 R.id.nav_logout -> logoutUser()
@@ -156,6 +167,11 @@ class DermaHomeFragment : Fragment() {
         }
         fetchUserData()
         loadFeaturedClinic() // Load a random featured clinic on start
+
+
+
+
+
     }
 
     private fun loadFeaturedClinic() {
@@ -200,25 +216,31 @@ class DermaHomeFragment : Fragment() {
         val dermaRef: DatabaseReference = database.getReference("clinicInfo").child(userId ?: return)
 
         dermaRef.get().addOnSuccessListener { snapshot ->
+            if (!isAdded || _binding == null) return@addOnSuccessListener  // ✅ Check fragment is active and view exists
+
             if (snapshot.exists()) {
                 val clinicInfo = snapshot.getValue(ClinicInfo::class.java)
 
-                binding.fullName.setText(clinicInfo?.name ?: "")
-                binding.totalRatings.text = String.format("%.1f", clinicInfo?.rating ?: 0f)
+                _binding?.apply {
+                    fullName.setText(clinicInfo?.name ?: "")
+                    totalRatings.text = String.format("%.1f", clinicInfo?.rating ?: 0f)
 
-                clinicInfo?.logoImage?.let {
-                    if (it.isNotEmpty()) {
-                        val decodedBytes = Base64.decode(it, Base64.DEFAULT)
-                        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-                        binding.profileView.setImageBitmap(bitmap)
+                    clinicInfo?.logoImage?.let {
+                        if (it.isNotEmpty()) {
+                            val decodedBytes = Base64.decode(it, Base64.DEFAULT)
+                            val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                            profileView.setImageBitmap(bitmap)
+                        }
                     }
                 }
-
             }
         }.addOnFailureListener {
-            Toast.makeText(context, "Failed to fetch clinic info", Toast.LENGTH_SHORT).show()
+            if (isAdded && _binding != null) {
+                Toast.makeText(context, "Failed to fetch clinic info", Toast.LENGTH_SHORT).show()
+            }
         }
     }
+
 
     private fun showLocationOnMap(address: String) {
         val geocoder = Geocoder(requireContext(), Locale.getDefault())
@@ -329,7 +351,89 @@ class DermaHomeFragment : Fragment() {
             }
         })
     }
+    private fun fetchConfirmedBookingsAndDecorateCalendar() {
+        val calendarView = binding.calendarView
+        confirmedDates.clear()
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val clinicInfoRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+            .getReference("clinicInfo")
+            .child(userId)
+
+        clinicInfoRef.get().addOnSuccessListener { snapshot ->
+            val clinicName = snapshot.child("clinicName").getValue(String::class.java)?.replace(" ", "_") ?: return@addOnSuccessListener
+            val bookingsRef = FirebaseDatabase.getInstance("https://dermascanai-2d7a1-default-rtdb.asia-southeast1.firebasedatabase.app/")
+                .getReference("clinicBookings")
+                .child(clinicName)
+
+            bookingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (bookingSnapshot in snapshot.children) {
+                        val status = bookingSnapshot.child("status").getValue(String::class.java)
+                        val dateStr = bookingSnapshot.child("date").getValue(String::class.java)
+
+                        if (status.equals("confirmed", ignoreCase = true) && dateStr != null) {
+                            try {
+                                val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH)
+                                val localDate = LocalDate.parse(dateStr, formatter)
+                                val calendarDay = CalendarDay.from(localDate.year, localDate.monthValue-1, localDate.dayOfMonth)
+
+                                Log.d("CalendarDebug", "Adding confirmed date: ${calendarDay.year}-${calendarDay.month}-${calendarDay.day}")
+
+                                confirmedDates.add(calendarDay)
+                            } catch (e: Exception) {
+                                Log.e("CalendarDebug", "Failed to parse date: $dateStr", e)
+                            }
+
+                        }
+                    }
+
+                    calendarView.addDecorator(ConfirmedBookingDecorator(confirmedDates))
+                    calendarView.addDecorator(TodayDecorator())
+
+                    binding.calendarView.setOnDateChangedListener { _, date, _ ->
+                        if (confirmedDates.contains(date)) {
+                            val intent = Intent(requireContext(), BookingApprovalRecords::class.java)
+                            intent.putExtra("selectedDate", date.date.toString())
+                            intent.putExtra("openApprovedTab", true) // 👈 new flag
+                            startActivity(intent)
+
+                        }
+                    }
+
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Toast.makeText(context, "Failed to load bookings: ${error.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
+    }
+
+
+
+
 
 
 
 }
+class ConfirmedBookingDecorator(private val dates: HashSet<CalendarDay>) : DayViewDecorator {
+    override fun shouldDecorate(day: CalendarDay): Boolean = dates.contains(day)
+
+    override fun decorate(view: DayViewFacade) {
+        view.addSpan(CircleSpan(Color.GREEN)) // Green circle
+    }
+}
+
+
+class TodayDecorator : DayViewDecorator {
+    private val today = CalendarDay.today()
+
+    override fun shouldDecorate(day: CalendarDay): Boolean = day == today
+
+    override fun decorate(view: DayViewFacade) {
+        view.addSpan(CircleSpan(Color.RED)) // Red circle
+    }
+}
+
+

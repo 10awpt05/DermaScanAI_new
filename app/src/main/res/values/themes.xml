@@ -3,6 +3,7 @@
     <style name="Base.Theme.DermaScanAI" parent="Theme.Material3.DynamicColors.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/main_green</item>
     </style>
 
     <style name="Theme.DermaScanAI" parent="Base.Theme.DermaScanAI" />

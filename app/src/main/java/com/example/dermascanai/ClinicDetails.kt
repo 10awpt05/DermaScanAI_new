@@ -72,6 +72,17 @@ class ClinicDetails : AppCompatActivity(), OnMapReadyCallback {
         binding.rateMe.setOnClickListener {
             currentClinicId?.let { id -> rateMe(id) }
         }
+
+        binding.messageMe.setOnClickListener {
+            currentClinicId?.let { clinicId ->
+                val intent = Intent(this, MessageMe::class.java)
+                intent.putExtra("receiverId", clinicId)  // 👈 pass clinic ID instead of email
+                startActivity(intent)
+            } ?: run {
+                Toast.makeText(this, "Clinic ID not found", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     }
 
     private fun setupRecyclerView() {
