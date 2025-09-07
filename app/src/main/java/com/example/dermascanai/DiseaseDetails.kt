@@ -38,18 +38,19 @@ class DiseaseDetails : AppCompatActivity() {
 
     private fun fetchDetails() {
         val condition = intent.getStringExtra("condition")
-        val imgBase64 = intent.getStringExtra("image")
+        val imagePath = intent.getStringExtra("imagePath") // ✅ get the file path instead of Base64
         val diseaseRef: DatabaseReference = database.getReference("disease").child(condition ?: return)
 
         diseaseRef.get().addOnSuccessListener { snapshot ->
             if (snapshot.exists()) {
                 val diseaseInfo = snapshot.getValue(DiseaseInfo::class.java)
 
-                // ✅ Decode Base64 string into Bitmap
-                if (!imgBase64.isNullOrEmpty()) {
-                    val decodedBytes = android.util.Base64.decode(imgBase64, android.util.Base64.DEFAULT)
-                    val bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-                    binding.dataImg.setImageBitmap(bitmap)
+                // ✅ Decode Bitmap from file path
+                if (!imagePath.isNullOrEmpty()) {
+                    val bitmap = android.graphics.BitmapFactory.decodeFile(imagePath)
+                    if (bitmap != null) {
+                        binding.dataImg.setImageBitmap(bitmap)
+                    }
                 }
 
                 binding.textView22.text = condition
@@ -72,6 +73,7 @@ class DiseaseDetails : AppCompatActivity() {
             }
         }
     }
+
 
 
     // Function to show the warning dialog

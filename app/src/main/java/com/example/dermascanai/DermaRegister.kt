@@ -58,7 +58,8 @@ class DermaRegister : AppCompatActivity() {
     private val times = listOf(
         "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM",
         "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM",
-        "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"
+        "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM",
+        "7:00 PM", "8:00 PM", "9:00 PM"
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,6 +85,16 @@ class DermaRegister : AppCompatActivity() {
                 submitRegistration()
             }
         }
+
+        // Initially disable the button
+        binding.submit.isEnabled = false
+        binding.submit.alpha = 0.5f // make it look greyed out
+
+        binding.checkBox.setOnCheckedChangeListener { _, isChecked ->
+            binding.submit.isEnabled = isChecked
+            binding.submit.alpha = if (isChecked) 1f else 0.5f
+        }
+
 
         binding.navTerms.setOnClickListener {
             val intent = Intent(this, TermsConditions::class.java)
@@ -316,8 +327,8 @@ class DermaRegister : AppCompatActivity() {
             validIdImage = validIdEncoded,
             password = hashedPassword,
             logoImage = profileImageEncoded,
-            birDocument = birEncoded,
-            permitDocument = businessPermitEncoded,
+//            birImage = birEncoded,
+//            permitDocument = businessPermitEncoded,
             address = binding.clinicAddress.text.toString().trim(),
             openingTime = selectedOpenTime,
             closingTime = selectedCloseTime,

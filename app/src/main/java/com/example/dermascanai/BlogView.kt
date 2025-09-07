@@ -28,7 +28,7 @@ class BlogView : AppCompatActivity() {
         binding = ActivityBlogViewBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        postId = intent.getStringExtra("id") ?: return
+        postId = intent.getStringExtra("postId") ?: return
 
         commentAdapter = CommentAdapter(commentList, object : OnCommentReplyListener {
             override fun onReply(parentCommentId: String) {

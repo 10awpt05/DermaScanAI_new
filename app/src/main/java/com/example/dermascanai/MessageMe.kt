@@ -338,29 +338,31 @@ class MessageMe : AppCompatActivity() {
             "fromUserId" to fromUserId,
             "toUserId" to toUserId,
             "message" to "$senderName has sent you a message.",
-            "postId" to "",
+            "postId" to "",  // keep empty since this is not post-related
             "type" to "message",
             "isRead" to false,
+            "status" to "",  // ✅ added so it matches your screenshot
             "timestamp" to timestamp
         )
 
-        // Only save to the correct receiver node
+        // 1️⃣ Save under global notifications (like your screenshot)
+        dbRef.child("notifications").child(toUserId).child(notificationId).setValue(notificationData)
+
+        // 2️⃣ Also save inside userInfo/clinicInfo for in-app use
         dbRef.child("userInfo").child(toUserId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(userSnapshot: DataSnapshot) {
                 if (userSnapshot.exists()) {
-                    // Receiver is a user
                     dbRef.child("userInfo").child(toUserId).child("notifications").child(notificationId)
                         .setValue(notificationData)
                 } else {
-                    // Receiver is a clinic
                     dbRef.child("clinicInfo").child(toUserId).child("notifications").child(notificationId)
                         .setValue(notificationData)
                 }
             }
-
             override fun onCancelled(error: DatabaseError) {}
         })
     }
+
 
 
 

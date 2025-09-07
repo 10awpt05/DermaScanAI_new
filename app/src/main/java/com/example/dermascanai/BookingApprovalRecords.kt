@@ -198,21 +198,18 @@ class BookingApprovalRecords : AppCompatActivity() {
 
         val query = status?.let { bookingsRef.orderByChild("status").equalTo(it) } ?: bookingsRef
 
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
+        query.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                appointmentList.clear()
                 if (snapshot.exists()) {
-                    for (bookingSnapshot in snapshot.children) { // bookingId level
+                    for (bookingSnapshot in snapshot.children) {
                         val booking = bookingSnapshot.getValue(BookingData::class.java)
                         booking?.let { appointmentList.add(it) }
                     }
                     appointmentList.sortByDescending { it.timestampMillis }
-                    adapter.notifyDataSetChanged()
-                    updateViewVisibility()
-                } else {
-                    appointmentList.clear()
-                    adapter.notifyDataSetChanged()
-                    updateViewVisibility()
                 }
+                adapter.notifyDataSetChanged()
+                updateViewVisibility()
                 binding.progressBar.visibility = View.GONE
             }
 
@@ -221,6 +218,7 @@ class BookingApprovalRecords : AppCompatActivity() {
                 binding.progressBar.visibility = View.GONE
             }
         })
+
     }
 
 

@@ -56,6 +56,7 @@ import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import showWarningDialog
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -195,16 +196,19 @@ class MainPage : AppCompatActivity() {
             // ✅ Details button
             binding.detailBtn.visibility = View.VISIBLE
             binding.detailBtn.setOnClickListener {
-                val baos = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
-                val byteArray = baos.toByteArray()
-                val imageBase64 = Base64.encodeToString(byteArray, Base64.DEFAULT)
+                // Save bitmap to cache instead of passing Base64
+                val file = File(cacheDir, "disease_preview.png")
+                FileOutputStream(file).use {
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+                }
 
+                // Pass only the path and name
                 val intent = Intent(this@MainPage, DiseaseDetails::class.java)
                 intent.putExtra("condition", diseaseName)
-                intent.putExtra("image", imageBase64)
+                intent.putExtra("imagePath", file.absolutePath) // ✅ small string
                 startActivity(intent)
             }
+
 
             // ✅ Report Scan button (only for derma users)
             val userId = firebase.currentUser?.uid ?: return@launch

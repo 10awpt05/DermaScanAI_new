@@ -36,8 +36,8 @@ data class ClinicInfo(
     val about: String? = null,
     val logoImage: String? = null,
     val isStable: Boolean = false,
-    val birDocument: String? = null,
-    val permitDocument: String? = null,
+//    val birDocument: String? = null,
+//    val permitDocument: String? = null,
     val services: List<String>? = null,
     val dermatologists: List<Dermatologist>? = null,
 

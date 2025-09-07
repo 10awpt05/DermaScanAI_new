@@ -68,7 +68,7 @@ class Register : AppCompatActivity() {
             binding.submit.isEnabled = isChecked
             binding.submit.setBackgroundColor(
                 if (isChecked)
-                    ContextCompat.getColor(this, R.color.Vivid_Violet) // Replace with your active color
+                    ContextCompat.getColor(this, R.color.main_green) // Replace with your active color
                 else
                     ContextCompat.getColor(this, android.R.color.darker_gray) // Grey when disabled
             )

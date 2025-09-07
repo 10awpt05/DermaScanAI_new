@@ -360,7 +360,7 @@ class EditClinicProfile : AppCompatActivity() {
             }
         }
 
-        clinicInfo.birDocument?.let {
+        clinicInfo.birImage?.let {
             if (it.isNotEmpty()) {
                 existingBIRImage = it
                 val decodedBytes = Base64.decode(it, Base64.DEFAULT)
@@ -370,7 +370,7 @@ class EditClinicProfile : AppCompatActivity() {
             }
         }
 
-        clinicInfo.permitDocument?.let {
+        clinicInfo.businessPermitImage?.let {
             if (it.isNotEmpty()) {
                 existingPermitImage = it
                 val decodedBytes = Base64.decode(it, Base64.DEFAULT)
@@ -409,44 +409,66 @@ class EditClinicProfile : AppCompatActivity() {
 
     private fun saveClinicProfile() {
         val clinicRef = database.getReference("clinicInfo")
+        val userRef = userId?.let { clinicRef.child(it) } ?: run {
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
+            return
+        }
 
+        // Basic fields
         val clinicInfoMap = mutableMapOf<String, Any?>()
-
         clinicInfoMap["name"] = binding.editClinicName.text?.toString()
         clinicInfoMap["tagline"] = binding.editTagline.text?.toString()
         clinicInfoMap["acceptingPatients"] = binding.acceptingPatientsCheckbox.isChecked
-
         clinicInfoMap["contact"] = binding.editContact.text?.toString()
         clinicInfoMap["email"] = binding.editEmail.text?.toString()
         clinicInfoMap["address"] = binding.editAddress.text?.toString()
-
+        clinicInfoMap["status"] = "pending"   // reset to pending after changes
         clinicInfoMap["operatingDays"] = binding.editOperatingDays.text?.toString()
         clinicInfoMap["openingTime"] = binding.editOpeningTime.text?.toString()
         clinicInfoMap["closingTime"] = binding.editClosingTime.text?.toString()
-
         clinicInfoMap["about"] = binding.editAbout.text?.toString()
-
         clinicInfoMap["services"] = servicesList
         clinicInfoMap["dermatologists"] = dermatologistsList
 
-        clinicInfoMap["logoImage"] = selectedLogoImage?.let { encodeImage(it) } ?: existingLogoImage
-        clinicInfoMap["birDocument"] = selectedBIRImage?.let { encodeImage(it) } ?: existingBIRImage
-        clinicInfoMap["permitDocument"] = selectedPermitImage?.let { encodeImage(it) } ?: existingPermitImage
-        clinicInfoMap["validIdImage"] = selectedValidIdImage?.let { encodeImage(it) } ?: existingValidIdImage
-
-        if (userId != null) {
-            clinicRef.child(userId).updateChildren(clinicInfoMap)
-                .addOnSuccessListener {
-                    Toast.makeText(this, "Clinic profile saved successfully!", Toast.LENGTH_SHORT).show()
-                    finish()
-                }
-                .addOnFailureListener {
-                    Toast.makeText(this, "Failed to save profile: ${it.message}", Toast.LENGTH_SHORT).show()
-                }
-        } else {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
+        // 🔑 Always overwrite with new image if re-uploaded
+        selectedLogoImage?.let {
+            val encoded = encodeImage(it)
+            clinicInfoMap["logoImage"] = encoded
+            android.util.Log.d("SAVE_PROFILE", "Saving NEW logo, length=${encoded.length}")
         }
+
+        selectedBIRImage?.let {
+            val encoded = encodeImage(it)
+            clinicInfoMap["birImage"] = encoded
+            android.util.Log.d("SAVE_PROFILE", "Saving NEW BIR, length=${encoded.length}")
+        }
+
+        selectedPermitImage?.let {
+            val encoded = encodeImage(it)
+            clinicInfoMap["businessPermitImage"] = encoded
+            android.util.Log.d("SAVE_PROFILE", "Saving NEW permit, length=${encoded.length}")
+        }
+
+        selectedValidIdImage?.let {
+            val encoded = encodeImage(it)
+            clinicInfoMap["validIdImage"] = encoded
+            android.util.Log.d("SAVE_PROFILE", "Saving NEW validID, length=${encoded.length}")
+        }
+
+        // Write all changes
+        userRef.updateChildren(clinicInfoMap)
+            .addOnSuccessListener {
+                android.util.Log.d("SAVE_PROFILE", "updateChildren success.")
+                Toast.makeText(this, "Clinic profile saved successfully!", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+            .addOnFailureListener { e ->
+                android.util.Log.e("SAVE_PROFILE", "updateChildren failed: ${e.message}")
+                Toast.makeText(this, "Failed to save profile: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
+
+
 
     private fun encodeImage(bitmap: Bitmap): String {
         val maxWidth = 800

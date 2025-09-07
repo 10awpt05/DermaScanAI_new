@@ -298,7 +298,7 @@
                 android:layout_height="wrap_content"
                 android:text="Clinic Opening Day"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:layout_marginTop="12dp"
                 app:layout_constraintTop_toBottomOf="@id/clinicPhoneLayout"
@@ -322,7 +322,7 @@
                 android:layout_height="wrap_content"
                 android:text="Clinic Closing Day"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:layout_marginTop="12dp"
                 app:layout_constraintTop_toBottomOf="@id/clinicPhoneLayout"
@@ -347,7 +347,7 @@
                 android:layout_height="wrap_content"
                 android:text="Clinic Opening Time"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:layout_marginTop="12dp"
                 app:layout_constraintTop_toBottomOf="@id/spinnerClinicOpenDay"
@@ -371,7 +371,7 @@
                 android:layout_height="wrap_content"
                 android:text="Clinic Closing Time"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:layout_marginTop="12dp"
                 app:layout_constraintTop_toBottomOf="@id/spinnerClinicCloseDay"
@@ -400,6 +400,7 @@
                 android:text="Upload Documents"
                 android:textColor="@color/black"
                 android:textSize="18sp"
+                android:layout_marginTop="10dp"
                 android:textStyle="bold"
                 app:layout_constraintTop_toBottomOf="@id/spinnerClinicCloseTime"
                 app:layout_constraintStart_toStartOf="parent" />
@@ -424,10 +425,12 @@
                     android:orientation="vertical"
                     android:layout_margin="8dp">
 
-                    <androidx.appcompat.widget.AppCompatButton
+                    <Button
                         android:id="@+id/uploadBirBtn"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:backgroundTint="@color/main_green"
+                        android:textColor="@android:color/white"
                         android:text="Upload BIR" />
 
                     <ImageView
@@ -448,10 +451,12 @@
                     android:orientation="vertical"
                     android:layout_margin="8dp">
 
-                    <androidx.appcompat.widget.AppCompatButton
+                    <Button
                         android:id="@+id/uploadBusinessPermitBtn"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:backgroundTint="@color/main_green"
+                        android:textColor="@android:color/white"
                         android:text="Upload Business Permit" />
 
                     <ImageView
@@ -472,10 +477,12 @@
                     android:orientation="vertical"
                     android:layout_margin="8dp">
 
-                    <androidx.appcompat.widget.AppCompatButton
+                    <Button
                         android:id="@+id/uploadValidIdBtn"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:backgroundTint="@color/main_green"
+                        android:textColor="@android:color/white"
                         android:text="Upload Valid ID" />
 
                     <ImageView

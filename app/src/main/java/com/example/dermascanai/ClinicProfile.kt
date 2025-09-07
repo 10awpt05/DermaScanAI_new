@@ -127,7 +127,7 @@ class ClinicProfile: AppCompatActivity() {
         }
 
         // Load verification documents
-        clinicInfo.birDocument?.let { birBase64 ->
+        clinicInfo.birImage?.let { birBase64 ->
             if (birBase64.isNotEmpty()) {
                 val decodedBytes = Base64.decode(birBase64, Base64.DEFAULT)
                 val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
@@ -135,7 +135,7 @@ class ClinicProfile: AppCompatActivity() {
             }
         }
 
-        clinicInfo.permitDocument?.let { permitBase64 ->
+        clinicInfo.businessPermitImage?.let { permitBase64 ->
             if (permitBase64.isNotEmpty()) {
                 val decodedBytes = Base64.decode(permitBase64, Base64.DEFAULT)
                 val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
